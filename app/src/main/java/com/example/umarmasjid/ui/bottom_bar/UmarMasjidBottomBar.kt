@@ -7,13 +7,11 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Badge
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,40 +27,29 @@ fun UmarMasjidBottomBar(
     onSelectedItem: (Int) -> Unit,
     navigationItems: List<ModernNavigationItem> = umarMasjidNavigationItems
 ) {
-    Surface(
-        tonalElevation = 3.dp, // Apply elevation to the Surface,
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column {
-            GradientLine( // Our custom composable for the gradient line
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp), // Height of the line
-                lineColor = MaterialTheme.colorScheme.outline, // Base color for the line
-                centerEmphasisFactor = 0.5f // How much more opaque the center is (0.0 to 1.0)
-            )
-            BottomAppBar(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.background,
-                tonalElevation = 0.dp,
-            ) {
-                NavigationBar(
-                    containerColor = Color.Transparent
-                ) {
-                    navigationItems.forEachIndexed { index, item ->
-                        ModernNavigationBarItem(
-                            item = item,
-                            isSelected = index == selectedIndex,
-                            onClick = { onSelectedItem(index) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+    Column {
+        GradientLine(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp),
+            lineColor = MaterialTheme.colorScheme.outline,
+            centerEmphasisFactor = 0.5f
+        )
 
+        NavigationBar(
+            containerColor = Color.Transparent
+        ) {
+            navigationItems.forEachIndexed { index, item ->
+                ModernNavigationBarItem(
+                    item = item,
+                    isSelected = index == selectedIndex,
+                    onClick = { onSelectedItem(index) },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
+
 }
 
 @Composable

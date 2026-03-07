@@ -48,7 +48,6 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -80,46 +79,47 @@ import java.util.Locale
 @Composable
 fun AttendanceScreen(
     popToHome: () -> Unit,
-    uiState: List<StudentWithAttendance>,
-    isLoading: Boolean,
+    uiState: AttendanceState,
     onEvent: (AttendanceEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val presentCount = uiState.count { it.present == true }
-    val absentCount = uiState.count { it.present == false }
-    val totalStudents = uiState.size
+    when (uiState) {
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            AttendanceTopAppBar(
-                onBack = popToHome,
-                presentCount = presentCount,
-                totalCount = totalStudents
-            )
-        },
-        /*floatingActionButton = {
-            AttendanceActionMenu(
-                onEvent = onEvent,
-                hasStudents = uiState.isNotEmpty()
-            )
-        }*/
-    ) { innerPadding ->
+        AttendanceState.Loading -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Student list
+        is AttendanceState.Success -> {
+
+            val students = uiState.students
+
+            val presentCount = students.count { it.present == true }
+            val absentCount = students.count { it.present == false }
+            val totalStudents = students.size
+
             LazyColumn(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical=16.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item { AttendanceDateCard() }
+
+                item {
+                    AttendanceTopAppBar(
+                        onBack = popToHome,
+                        presentCount = presentCount,
+                        totalCount = totalStudents
+                    )
+                }
+
+                item {
+                    AttendanceDateCard()
+                }
 
                 item {
                     AttendanceSummaryCard(
@@ -129,15 +129,23 @@ fun AttendanceScreen(
                     )
                 }
 
-                if (!isLoading && uiState.isEmpty()) {
-                    item { EmptyAttendanceState() }
+                if (students.isEmpty()) {
+
+                    item {
+                        EmptyAttendanceState()
+                    }
+
                 } else {
-                    item { AttendanceListHeader(totalStudents = totalStudents) }
+
+                    item {
+                        AttendanceListHeader(totalStudents = totalStudents)
+                    }
 
                     items(
-                        items = uiState,
+                        items = students,
                         key = { it.studentId }
                     ) { studentAttendance ->
+
                         ModernStudentAttendanceCard(
                             modifier = Modifier.animateItem(
                                 fadeInSpec = null,
@@ -160,19 +168,13 @@ fun AttendanceScreen(
                     }
                 }
 
-                item { Spacer(modifier = Modifier.height(80.dp)) }
-            }
-
-            // Center loading overlay
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttendanceTopAppBar(
@@ -559,6 +561,7 @@ fun ModernStudentAttendanceCard(
         }
     }
 }
+
 @Composable
 fun StudentAvatar(
     name: String,
@@ -653,7 +656,10 @@ fun AttendanceToggleButton(
         ),
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier.animateContentSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal = 16.dp,
+            vertical = 12.dp
+        )
     ) {
         Icon(
             imageVector = when {

@@ -13,10 +13,10 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 
-data class AttendanceState(
-    val studentWithAttendance: List<StudentWithAttendance> = emptyList(),
-    val isLoading: Boolean = false,
-)
+sealed interface AttendanceState {
+    object Loading : AttendanceState
+    data class Success(val students: List<StudentWithAttendance>) : AttendanceState
+}
 
 @HiltViewModel
 class AttendanceViewModel @Inject constructor(
@@ -28,49 +28,41 @@ class AttendanceViewModel @Inject constructor(
         .toInstant()
         .toEpochMilli()
 
+    private val _uiState =
+        MutableStateFlow<AttendanceState>(AttendanceState.Loading)
 
-    private val _uiState = MutableStateFlow(AttendanceState())
     val uiState = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            _uiState.update { it.copy(
-                isLoading = true
-            ) }
-            attendanceRepository.getStudentsWithAttendance(today)
-                .collect { studentWithAttendances ->
-                    _uiState.update { it.copy(
-                        studentWithAttendance = studentWithAttendances,
-                        isLoading = false
-                    ) }
+            attendanceRepository
+                .getStudentsWithAttendance(today)
+                .collect { students ->
+
+                    _uiState.value =
+                        AttendanceState.Success(students)
                 }
         }
     }
 
-
     fun onEvent(event: AttendanceEvent) {
         when (event) {
+
             is AttendanceEvent.MarkAttendance -> {
                 toggleAttendance(event.studentId, event.isPresent)
             }
 
-            AttendanceEvent.MarkAllAbsent -> {
+            AttendanceEvent.MarkAllAbsent -> { }
 
-            }
-            AttendanceEvent.MarkAllPresent -> {
+            AttendanceEvent.MarkAllPresent -> { }
 
-            }
-            AttendanceEvent.ResetAttendance -> {
-
-            }
+            AttendanceEvent.ResetAttendance -> { }
         }
     }
 
-    fun toggleAttendance(studentId: Int, status: Boolean) {
+    private fun toggleAttendance(studentId: Int, status: Boolean) {
         viewModelScope.launch {
             attendanceRepository.markAttendance(studentId, today, status)
         }
     }
-
 }
-
