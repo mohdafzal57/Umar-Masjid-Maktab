@@ -136,6 +136,7 @@ private val darkScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDark,
 )
 
+/*
 private val mediumContrastLightColorScheme = lightColorScheme(
     primary = primaryLightMediumContrast,
     onPrimary = onPrimaryLightMediumContrast,
@@ -287,6 +288,7 @@ private val highContrastDarkColorScheme = darkColorScheme(
     surfaceContainerHigh = surfaceContainerHighDarkHighContrast,
     surfaceContainerHighest = surfaceContainerHighestDarkHighContrast,
 )
+*/
 
 @Immutable
 data class ColorFamily(

@@ -1,6 +1,7 @@
 package com.example.umarmasjid.data.local_database.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -18,6 +19,9 @@ interface PaymentDao {
     @Update
     suspend fun updatePayment(payment: PaymentEntity)
 
+    @Delete
+    suspend fun deletePayment(payment: PaymentEntity)
+
     @Query("""
     SELECT 
         s.id AS studentId,
@@ -30,7 +34,6 @@ interface PaymentDao {
     INNER JOIN payments p ON s.id = p.student_id
     WHERE p.payment_date BETWEEN :startOfMonth AND :endOfMonth
 """)
-
     fun getAllStudentsWithPayment(
         startOfMonth: Long,
         endOfMonth: Long
@@ -62,4 +65,3 @@ interface PaymentDao {
         endOfMonth: Long
     ): Flow<Double?>
 }
-

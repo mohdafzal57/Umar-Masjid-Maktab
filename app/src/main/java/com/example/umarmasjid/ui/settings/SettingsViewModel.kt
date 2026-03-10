@@ -113,7 +113,7 @@ class SettingsViewModel @Inject constructor(
             while (it.moveToNext()) {
                 val name = it.getString(nameIndex)
                 val number = it.getString(numberIndex).replace("\\s".toRegex(), "")
-                if (name != null && number != null) {
+                if (name != null) {
                     contactsList.add(ContactInfo(name, number))
                 }
             }

@@ -17,6 +17,10 @@ class PaymentRepository @Inject constructor(
         paymentDao.updatePayment(payment)
     }
 
+    suspend fun deletePayment(payment: PaymentEntity) {
+        paymentDao.deletePayment(payment)
+    }
+
     fun getPaymentsTillNowByStudentId(
         studentId: Int
     ): Flow<List<PaymentEntity>> {
@@ -31,6 +35,4 @@ class PaymentRepository @Inject constructor(
     ): Flow<List<StudentWithPayment>> {
         return paymentDao.getAllStudentsWithPayment(startOfMonth, endOfMonth)
     }
-
-
 }
