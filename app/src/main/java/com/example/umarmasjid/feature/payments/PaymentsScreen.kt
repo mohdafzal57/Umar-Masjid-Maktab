@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun PaymentScreen(
+fun PaymentsScreen(
     popToHome: () -> Unit,
     uiState: PaymentState,
     onPaymentDone: (Int, Double, String, String?) -> Unit,

@@ -16,7 +16,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class PaymentViewModel @Inject constructor(
+class PaymentsViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
     private val paymentRepository: PaymentRepository
 ) : ViewModel() {

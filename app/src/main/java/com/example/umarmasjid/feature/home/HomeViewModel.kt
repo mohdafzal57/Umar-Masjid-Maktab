@@ -15,7 +15,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor() : ViewModel() {
 
     private val _state = MutableStateFlow(buildInitialState())
-    val state: StateFlow<HomeState> = _state.asStateFlow()
+    val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
     fun onAction(action: HomeAction) {
         when (action) {
@@ -45,10 +45,15 @@ class HomeViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun selectPeriod(period: AttendancePeriod) {
-        _state.update { it.copy(attendancePeriod = period, attendanceTrend = fakeAttendance(period)) }
+        _state.update {
+            it.copy(
+                attendancePeriod = period,
+                attendanceTrend = fakeAttendance(period)
+            )
+        }
     }
 
-    private fun buildInitialState() = HomeState(
+    private fun buildInitialState() = HomeUiState(
         prayerTimes = listOf(
             PrayerTime("Fajr", "05:45"),
             PrayerTime("Dhuhr", "12:30"),
@@ -58,11 +63,56 @@ class HomeViewModel @Inject constructor() : ViewModel() {
         ),
         attendanceTrend = fakeAttendance(AttendancePeriod.SEVEN_DAYS),
         recentStudents = listOf(
-            StudentSummary(1, "AH", "Ahmed Hassan",   "Grade 5", "STD-001", 96, FeeStatus.PAID,    0xFF5C8AFF),
-            StudentSummary(2, "FA", "Fatima Ali",     "Grade 6", "STD-002", 98, FeeStatus.PAID,    0xFF7C6AF5),
-            StudentSummary(3, "MK", "Mohammed Khan",  "Grade 4", "STD-003", 89, FeeStatus.PENDING, 0xFFF5A623),
-            StudentSummary(4, "AS", "Aisha Siddiqui", "Grade 7", "STD-004", 95, FeeStatus.PAID,    0xFFE891C8),
-            StudentSummary(5, "ZA", "Zainab Ahmed",   "Grade 5", "STD-005", 92, FeeStatus.PAID,    0xFF91C8E4),
+            StudentSummary(
+                1,
+                "AH",
+                "Ahmed Hassan",
+                "Grade 5",
+                "STD-001",
+                96,
+                FeeStatus.PAID,
+                0xFF5C8AFF
+            ),
+            StudentSummary(
+                2,
+                "FA",
+                "Fatima Ali",
+                "Grade 6",
+                "STD-002",
+                98,
+                FeeStatus.PAID,
+                0xFF7C6AF5
+            ),
+            StudentSummary(
+                3,
+                "MK",
+                "Mohammed Khan",
+                "Grade 4",
+                "STD-003",
+                89,
+                FeeStatus.PENDING,
+                0xFFF5A623
+            ),
+            StudentSummary(
+                4,
+                "AS",
+                "Aisha Siddiqui",
+                "Grade 7",
+                "STD-004",
+                95,
+                FeeStatus.PAID,
+                0xFFE891C8
+            ),
+            StudentSummary(
+                5,
+                "ZA",
+                "Zainab Ahmed",
+                "Grade 5",
+                "STD-005",
+                92,
+                FeeStatus.PAID,
+                0xFF91C8E4
+            ),
         ),
     )
 
@@ -73,12 +123,17 @@ class HomeViewModel @Inject constructor() : ViewModel() {
             AttendancePoint("Fri", 99f), AttendancePoint("Sat", 93f),
             AttendancePoint("Sun", 95f),
         )
+
         AttendancePeriod.THIRTY_DAYS -> listOf(
-            AttendancePoint("W1", 94f), AttendancePoint("W2", 96f),
-            AttendancePoint("W3", 92f), AttendancePoint("W4", 97f),
+            AttendancePoint("W1", 94f),
+            AttendancePoint("W2", 96f),
+            AttendancePoint("W3", 92f),
+            AttendancePoint("W4", 97f),
         )
+
         AttendancePeriod.THREE_MONTHS -> listOf(
-            AttendancePoint("Jan", 95f), AttendancePoint("Feb", 93f),
+            AttendancePoint("Jan", 95f),
+            AttendancePoint("Feb", 93f),
             AttendancePoint("Mar", 96f),
         )
     }

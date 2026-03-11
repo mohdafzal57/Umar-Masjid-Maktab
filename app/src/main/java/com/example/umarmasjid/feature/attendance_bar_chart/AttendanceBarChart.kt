@@ -1,4 +1,4 @@
-package com.example.umarmasjid.ui.bar_attendance_barchar
+package com.example.umarmasjid.feature.attendance_bar_chart
 
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,15 +48,11 @@ import java.util.Locale
 
 @Composable
 fun AttendanceBarCharScreen(
-    studentId: Int,
-    viewModel: AttendanceViewModel = hiltViewModel()
+    viewModel: AttendanceBarChartViewModel = hiltViewModel()
 ) {
     val dateFormat = SimpleDateFormat("MMMM", Locale.getDefault())
     val attendanceList by viewModel.attendanceState.collectAsState()
 
-    LaunchedEffect(studentId) {
-        viewModel.loadAttendance(studentId)
-    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

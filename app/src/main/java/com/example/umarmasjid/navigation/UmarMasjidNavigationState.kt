@@ -14,6 +14,8 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import com.example.umarmasjid.feature.attendance.StudentAttendanceNavKey
+import com.example.umarmasjid.feature.home.HomeNavKey
 
 /**
  * Handles navigation events (forward and back) by updating the navigation state.
@@ -43,6 +45,7 @@ class UmarMasjidNavigator(val state: UmarMasjidNavigationState) {
             state.startKey -> {
                 // You cannot go back from the start route
             }
+
             state.currentTopLevelKey -> {
                 // We're at the base of the current sub stack, go back to the previous top level
                 // stack.
@@ -50,6 +53,7 @@ class UmarMasjidNavigator(val state: UmarMasjidNavigationState) {
                     state.topLevelStack.removeLastOrNull()
                 }
             }
+
             else -> state.currentSubStack.removeLastOrNull()
         }
     }
@@ -96,7 +100,7 @@ class UmarMasjidNavigator(val state: UmarMasjidNavigationState) {
  */
 @Composable
 fun rememberUmarMasjidNavigationState(
-    startKey: NavKey = Destination.Home,
+    startKey: NavKey = HomeNavKey,
     topLevelKeys: Set<NavKey> = TOP_LEVEL_NAV_ITEMS.keys,
 ): UmarMasjidNavigationState {
     val topLevelStack = rememberNavBackStack(startKey)
@@ -137,8 +141,8 @@ class UmarMasjidNavigationState(
     val currentKey: NavKey by derivedStateOf { currentSubStack.last() }
 
     val showBottomBar: Boolean
-        get() = currentTopLevelKey is Destination.Home || 
-                currentTopLevelKey is Destination.StudentAttendance
+        get() = currentTopLevelKey is HomeNavKey ||
+                currentTopLevelKey is StudentAttendanceNavKey
 }
 
 /**

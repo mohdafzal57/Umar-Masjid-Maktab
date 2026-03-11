@@ -46,9 +46,9 @@ fun StudentScreen(
     students: List<StudentEntity>,
     isLoading: Boolean,
     popToHome: () -> Unit,
-    navigateToPayment: (Int) -> Unit,
+    navigateToPayment: (studentId: Int) -> Unit,
     onEvent: (StudentEvent) -> Unit,
-    navigateToAttendance: (Int) -> Unit
+    navigateToAttendanceBarChart: (Int) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }
@@ -115,7 +115,7 @@ fun StudentScreen(
                     },
                     onDelete = { student -> onEvent(StudentEvent.DeleteStudent(student)) },
                     navigateToPayment = navigateToPayment,
-                    navigateToAttendance = navigateToAttendance,
+                    navigateToAttendance = navigateToAttendanceBarChart,
                     searchQuery = searchQuery
                 )
             }

@@ -5,23 +5,18 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.example.umarmasjid.navigation.Destination
-import com.example.umarmasjid.ui.bar_attendance_barchar.AttendanceBarCharScreen
+import com.example.umarmasjid.navigation.UmarMasjidNavigator
 
 fun EntryProviderScope<NavKey>.attendanceEntry(
-    onBack: () -> Unit
+    navigator: UmarMasjidNavigator
 ) {
-    entry<Destination.StudentAttendance> {
+    entry<StudentAttendanceNavKey> {
         val viewModel = hiltViewModel<AttendanceViewModel>()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         AttendanceScreen(
-            popToHome = onBack,
+            popToHome = navigator::goBack,
             uiState = uiState,
             onEvent = viewModel::onAction,
         )
-    }
-    
-    entry<Destination.AttendanceChart> { key ->
-        AttendanceBarCharScreen(key.studentId)
     }
 }

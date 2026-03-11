@@ -1,4 +1,4 @@
-package com.example.umarmasjid.ui.add_payment
+package com.example.umarmasjid.feature.student_payment
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +38,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -77,18 +78,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// Payment events
-sealed class PaymentEvent {
-    data class AddPayment(
-        val studentId: Int,
-        val amount: Double,
-        val paymentMethod: String,
-        val receiptNumber: String?
-    ) : PaymentEvent()
-
-    data class DeletePayment(val payment: PaymentEntity) : PaymentEvent()
-}
-
 // Payment methods data class
 data class PaymentMethod(
     val name: String,
@@ -98,96 +87,111 @@ data class PaymentMethod(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPaymentScreen(
-    student: StudentEntity,
-    existingPayments: List<PaymentEntity>,
+fun StudentPaymentScreen(
+    uiState: StudentPaymentState,
     onEvent: (PaymentEvent) -> Unit,
     onBack: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showAddPaymentSheet by remember { mutableStateOf(false) }
 
+    val student = uiState.student
+    val existingPayments = uiState.payments ?: emptyList()
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             AddPaymentTopAppBar(
-                studentName = student.name,
+                studentName = student?.name ?: "Loading...",
                 onBack = onBack
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showAddPaymentSheet = true },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 6.dp,
-                    pressedElevation = 8.dp
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Payment"
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Payment")
+            if (student != null) {
+                ExtendedFloatingActionButton(
+                    onClick = { showAddPaymentSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 6.dp,
+                        pressedElevation = 8.dp
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Payment"
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Payment")
+                }
             }
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                StudentPaymentSummaryCard(
-                    student = student,
-                    payments = existingPayments
+        if (student == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    StudentPaymentSummaryCard(
+                        student = student,
+                        payments = existingPayments
+                    )
+                }
+
+                item {
+                    PaymentHistoryHeader(count = existingPayments.size)
+                }
+
+                if (existingPayments.isEmpty()) {
+                    item {
+                        EmptyPaymentsState(
+                            onAddPayment = { showAddPaymentSheet = true }
+                        )
+                    }
+                } else {
+                    items(
+                        items = existingPayments.sortedByDescending { it.paymentDate },
+                        key = { it.id }
+                    ) { payment ->
+                        PaymentHistoryCard(
+                            payment = payment,
+                            onDelete = { onEvent(PaymentEvent.DeletePayment(payment)) }
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
+            }
+
+            if (showAddPaymentSheet) {
+                AddPaymentBottomSheet(
+                    sheetState = sheetState,
+                    studentName = student.name,
+                    onDismiss = { showAddPaymentSheet = false },
+                    onAddPayment = { amount, method, receiptNumber ->
+                        onEvent(PaymentEvent.AddPayment(student.id, amount, method, receiptNumber))
+                    }
                 )
             }
-
-            item {
-                PaymentHistoryHeader(count = existingPayments.size)
-            }
-
-            if (existingPayments.isEmpty()) {
-                item {
-                    EmptyPaymentsState(
-                        onAddPayment = { showAddPaymentSheet = true }
-                    )
-                }
-            } else {
-                items(
-                    items = existingPayments.sortedByDescending { it.paymentDate },
-                    key = { it.id }
-                ) { payment ->
-                    PaymentHistoryCard(
-                        payment = payment,
-                        onDelete = { onEvent(PaymentEvent.DeletePayment(payment)) }
-                    )
-                }
-            }
-
-            // Add bottom spacing for FAB
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
-            }
-        }
-
-        if (showAddPaymentSheet) {
-            AddPaymentBottomSheet(
-                sheetState = sheetState,
-                studentName = student.name,
-                onDismiss = { showAddPaymentSheet = false },
-                onAddPayment = { amount, method, receiptNumber ->
-                    onEvent(PaymentEvent.AddPayment(student.id, amount, method, receiptNumber))
-                }
-            )
         }
     }
 }
+
 
 @Composable
 fun StudentPaymentSummaryCard(

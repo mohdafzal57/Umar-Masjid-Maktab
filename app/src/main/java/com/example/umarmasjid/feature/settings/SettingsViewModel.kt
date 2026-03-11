@@ -1,4 +1,4 @@
-package com.example.umarmasjid.ui.settings
+package com.example.umarmasjid.feature.settings
 
 import android.content.Context
 import android.provider.ContactsContract

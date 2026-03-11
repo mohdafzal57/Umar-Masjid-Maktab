@@ -10,6 +10,10 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.umarmasjid.feature.attendance.StudentAttendanceNavKey
+import com.example.umarmasjid.feature.home.HomeNavKey
+import com.example.umarmasjid.feature.payments.PaymentsNavKey
+import com.example.umarmasjid.feature.students.StudentProfileNavKey
 
 data class TopLevelNavItem(
     val selectedIcon: ImageVector,
@@ -43,8 +47,8 @@ val PAYMENTS = TopLevelNavItem(
 )
 
 val TOP_LEVEL_NAV_ITEMS = mapOf(
-    Destination.Home to HOME,
-    Destination.StudentAttendance to ATTENDANCE,
-    Destination.StudentProfile to STUDENTS,
-    Destination.FeePayment to PAYMENTS
+    HomeNavKey to HOME,
+    StudentAttendanceNavKey to ATTENDANCE,
+    StudentProfileNavKey to STUDENTS,
+    PaymentsNavKey to PAYMENTS
 )

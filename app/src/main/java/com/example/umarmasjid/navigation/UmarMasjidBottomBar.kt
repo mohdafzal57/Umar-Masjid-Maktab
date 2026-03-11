@@ -26,7 +26,7 @@ import androidx.navigation3.runtime.NavKey
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmarMasjidBottomBar(
-    scrollBehavior: BottomAppBarScrollBehavior? = null,
+    scrollBehavior: BottomAppBarScrollBehavior,
     currentTopLevelKey: NavKey,
     onNavigate: (NavKey) -> Unit,
 ) {
@@ -35,7 +35,7 @@ fun UmarMasjidBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(1.dp),
-            lineColor = MaterialTheme.colorScheme.outline,
+            lineColor = Color.LightGray,
             centerEmphasisFactor = 0.5f
         )
         BottomAppBar(

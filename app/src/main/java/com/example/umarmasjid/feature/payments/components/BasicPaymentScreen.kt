@@ -44,7 +44,7 @@ import com.example.umarmasjid.data.local_database.model.StudentEntity
 import com.example.umarmasjid.data.local_database.model.StudentWithPayment
 import com.example.umarmasjid.feature.payments.PaymentState
 import com.example.umarmasjid.feature.payments.PaymentStatus
-import com.example.umarmasjid.ui.add_payment.AddPaymentBottomSheet
+import com.example.umarmasjid.feature.student_payment.AddPaymentBottomSheet
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date

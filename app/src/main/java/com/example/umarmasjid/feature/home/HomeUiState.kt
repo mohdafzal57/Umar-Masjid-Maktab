@@ -3,7 +3,7 @@ package com.example.umarmasjid.feature.home
 import androidx.compose.runtime.Immutable
 
 @Immutable
-data class HomeState(
+data class HomeUiState(
     val greeting: String = "Assalamu Alaikum",
     val islamicDate: IslamicDate = IslamicDate(),
     val prayerTimes: List<PrayerTime> = emptyList(),

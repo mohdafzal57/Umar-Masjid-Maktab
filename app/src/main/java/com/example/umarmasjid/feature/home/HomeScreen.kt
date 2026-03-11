@@ -72,7 +72,7 @@ fun HomeScreen(
 
 @Composable
 internal fun HomeScreenContent(
-    state: HomeState,
+    state: HomeUiState,
     onAction: (HomeAction) -> Unit,
 ) {
     val lazyState = rememberLazyListState()
@@ -171,7 +171,7 @@ internal fun HomeScreenContent(
 
 @Composable
 private fun HomeHeader(
-    state: HomeState,
+    state: HomeUiState,
     onAction: (HomeAction) -> Unit,
 ) {
     Box(

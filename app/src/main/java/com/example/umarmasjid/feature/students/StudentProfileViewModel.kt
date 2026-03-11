@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class StudentState(
+data class StudentProfileState(
     val students: List<StudentEntity> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
@@ -20,11 +20,11 @@ data class StudentState(
 )
 
 @HiltViewModel
-class StudentViewModel @Inject constructor(
+class StudentProfileViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(StudentState())
+    private val _uiState = MutableStateFlow(StudentProfileState())
     val uiState = _uiState.asStateFlow()
 
     init {
