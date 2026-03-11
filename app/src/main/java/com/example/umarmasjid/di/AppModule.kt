@@ -2,6 +2,7 @@ package com.example.umarmasjid.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.umarmasjid.core.data.networking.HttpClientFactory
 import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
@@ -17,12 +18,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
+import io.ktor.client.engine.cio.CIO
 import javax.inject.Singleton
 
 @Module
@@ -32,18 +28,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHttpClient(): HttpClient {
-        return HttpClient(OkHttp) {
-            install(Logging) {
-                level = LogLevel.ALL
-            }
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    prettyPrint = true
-                    isLenient = true
-                })
-            }
-        }
+        return HttpClientFactory.create(CIO.create())
     }
 
     // Provide Database
