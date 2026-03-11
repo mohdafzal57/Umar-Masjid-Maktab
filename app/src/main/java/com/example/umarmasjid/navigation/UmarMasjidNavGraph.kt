@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.umarmasjid.feature.attendance.attendanceEntry
+import com.example.umarmasjid.feature.attendance_bar_chart.attendanceBarChartEntry
 import com.example.umarmasjid.feature.home.homeEntry
 import com.example.umarmasjid.feature.payments.paymentsEntry
 import com.example.umarmasjid.feature.student_payment.studentPaymentEntry
@@ -22,6 +23,7 @@ fun UmarMasjidNavGraph(
         studentEntry(navigator)
         paymentsEntry(navigator)
         studentPaymentEntry(navigator)
+        attendanceBarChartEntry(navigator)
     }
 
     NavDisplay(
