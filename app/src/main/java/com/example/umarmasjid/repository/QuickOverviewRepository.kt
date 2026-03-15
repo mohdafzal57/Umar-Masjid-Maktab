@@ -4,8 +4,11 @@ import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class QuickOverviewRepository(
+@Singleton
+class QuickOverviewRepository @Inject constructor(
     private val studentDao: StudentDao,
     private val attendanceDao: AttendanceDao,
     private val paymentDao: PaymentDao

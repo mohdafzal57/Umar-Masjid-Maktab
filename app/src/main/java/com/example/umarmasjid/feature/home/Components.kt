@@ -137,7 +137,7 @@ fun PrayerTimesCard(
             Spacer(Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 prayerTimes.forEach { PrayerTimeItem(it) }
             }
@@ -153,7 +153,7 @@ private fun PrayerTimeItem(prayer: PrayerTime) {
             color = MaterialTheme.colorScheme.primary
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -163,9 +163,10 @@ private fun PrayerTimeItem(prayer: PrayerTime) {
                 )
                 Text(
                     text = prayer.time,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    letterSpacing = (-0.5).sp
                 )
                 Text(
                     text = "Next",
@@ -175,7 +176,9 @@ private fun PrayerTimeItem(prayer: PrayerTime) {
             }
         }
     } else {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.padding(vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = prayer.name,
                 style = MaterialTheme.typography.labelSmall,
@@ -184,9 +187,9 @@ private fun PrayerTimeItem(prayer: PrayerTime) {
             Spacer(Modifier.height(2.dp))
             Text(
                 text = prayer.time,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                letterSpacing = (-0.5).sp
             )
         }
     }

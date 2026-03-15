@@ -30,6 +30,7 @@ object HttpClientFactory {
             }
             defaultRequest {
                 contentType(ContentType.Application.Json)
+                url("https://api.aladhan.com/v1/")
             }
         }
     }

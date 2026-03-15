@@ -5,7 +5,9 @@ import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentWithPayment
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class PaymentRepository @Inject constructor(
     private val paymentDao: PaymentDao
 ) {

@@ -81,6 +81,8 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     api(libs.androidx.dataStore)
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     
     // Ktor
     implementation(libs.ktor.client.core)

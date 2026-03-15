@@ -4,7 +4,9 @@ import com.example.umarmasjid.data.local_database.dao.StudentDao
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class StudentRepository @Inject constructor(private val studentDao: StudentDao) {
     fun getAllStudents(): Flow<List<StudentEntity>> = studentDao.getAllStudents()
     suspend fun addStudent(student: StudentEntity) = studentDao.insertStudent(student)

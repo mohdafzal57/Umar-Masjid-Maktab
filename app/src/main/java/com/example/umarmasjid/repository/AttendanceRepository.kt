@@ -10,9 +10,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
+import javax.inject.Inject
+import javax.inject.Singleton
 
 
-class AttendanceRepository(private val attendanceDao: AttendanceDao) {
+@Singleton
+class AttendanceRepository @Inject constructor(private val attendanceDao: AttendanceDao) {
 
     suspend fun markAttendance(studentId: Int, date: Long, status: Boolean) {
         withContext(Dispatchers.IO) {
