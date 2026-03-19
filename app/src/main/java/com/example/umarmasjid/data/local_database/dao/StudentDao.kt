@@ -32,6 +32,9 @@ interface StudentDao {
     @Query("SELECT COUNT(*) FROM students")
     fun getStudentCount(): Flow<Int>
 
+    @Query("SELECT * FROM students ORDER BY enrollment_date DESC LIMIT :limit")
+    fun getRecentStudents(limit: Int = 5): Flow<List<StudentEntity>>
+
     // Students who have NOT paid in current month
     @Query("""
         SELECT s.*

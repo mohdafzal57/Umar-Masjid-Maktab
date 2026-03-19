@@ -1,11 +1,10 @@
-package com.example.umarmasjid.data.networking
+package com.example.umarmasjid.data.repository
 
 import com.example.umarmasjid.core.data.preferences.PrayerSettingsPreferences
 import com.example.umarmasjid.core.domain.util.NetworkError
 import com.example.umarmasjid.core.domain.util.Result
 import com.example.umarmasjid.core.domain.util.map
 import com.example.umarmasjid.data.mappers.toDomain
-import com.example.umarmasjid.data.repository.RemotePrayerTimesDataSource
 import com.example.umarmasjid.domain.model.PrayerDay
 import com.example.umarmasjid.domain.repository.PrayerTimesRepository
 import kotlinx.coroutines.flow.first
@@ -13,7 +12,7 @@ import javax.inject.Inject
 
 class OfflineFirstPrayerTimesRepository @Inject constructor(
     private val remote: RemotePrayerTimesDataSource,
-    private val preferences: PrayerSettingsPreferences
+    private val preferences: PrayerSettingsPreferences,
 ) : PrayerTimesRepository {
 
     override suspend fun getMonthlyPrayerTimes(
@@ -29,4 +28,6 @@ class OfflineFirstPrayerTimesRepository @Inject constructor(
             prayerSettings = settings
         ).map { it.toDomain() }
     }
+
+
 }

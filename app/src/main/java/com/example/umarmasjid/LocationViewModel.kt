@@ -24,7 +24,7 @@ class LocationViewModel @Inject constructor(
             location?.let {
                 // Save to DataStore so it persists
                 preferences.setLocation(it.latitude, it.longitude)
-                println("Location updated: ${it.latitude}, ${it.longitude}")
+                println("LocationViewModel Location updated: ${it.latitude}, ${it.longitude}")
             }
         }
     }

@@ -3,7 +3,8 @@ package com.example.umarmasjid.domain.model
 data class PrayerSettings(
     val latitude: Double?,
     val longitude: Double?,
-    val cityName: String?,
+    val city: String?,
+    val country: String?,
     val method: Int,
     val school: Int,
     val midnightMode: Int,

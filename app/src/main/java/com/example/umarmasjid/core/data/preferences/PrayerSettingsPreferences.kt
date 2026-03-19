@@ -7,9 +7,13 @@ interface PrayerSettingsPreferences {
 
     val settings: Flow<PrayerSettings>
 
+    suspend fun setLocationInitialized(enabled: Boolean)
+
+    fun isLocationInitialized(): Flow<Boolean>
+
     suspend fun setLocation(latitude: Double, longitude: Double)
 
-    suspend fun setCityName(cityName: String)
+    suspend fun setCountryAndCity(country: String, city: String)
 
     suspend fun setMethod(method: Int)
 

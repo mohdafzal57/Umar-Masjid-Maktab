@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.umarmasjid.di.PrayerSettingsDataStore
 import com.example.umarmasjid.domain.model.PrayerSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 
 @Singleton
 class DataStorePrayerSettingsPreferences @Inject constructor(
+    @PrayerSettingsDataStore
     private val dataStore: DataStore<Preferences>
 ) : PrayerSettingsPreferences {
 
@@ -26,7 +28,8 @@ class DataStorePrayerSettingsPreferences @Inject constructor(
         PrayerSettings(
             latitude = prefs[LATITUDE],
             longitude = prefs[LONGITUDE],
-            cityName = prefs[CITY_NAME] ?: "",
+            country = prefs[COUNTRY_NAME],
+            city = prefs[CITY_NAME],
             method = prefs[METHOD] ?: 1,
             school = prefs[SCHOOL] ?: 1,
             midnightMode = prefs[MIDNIGHT_MODE] ?: 0,
@@ -40,6 +43,14 @@ class DataStorePrayerSettingsPreferences @Inject constructor(
         )
     }
 
+    override suspend fun setLocationInitialized(enabled: Boolean) {
+        dataStore.edit { it[LOCATION_INITIALIZED] = enabled }
+    }
+
+    override fun isLocationInitialized(): Flow<Boolean> {
+        return dataStore.data.map { it[LOCATION_INITIALIZED] ?: false }
+    }
+
     override suspend fun setLocation(latitude: Double, longitude: Double) {
         dataStore.edit {
             it[LATITUDE] = latitude
@@ -47,8 +58,11 @@ class DataStorePrayerSettingsPreferences @Inject constructor(
         }
     }
 
-    override suspend fun setCityName(cityName: String) {
-        dataStore.edit { it[CITY_NAME] = cityName }
+    override suspend fun setCountryAndCity(country: String, city: String) {
+        dataStore.edit {
+            it[CITY_NAME] =  city
+            it[COUNTRY_NAME] = country
+        }
     }
 
 
@@ -105,6 +119,8 @@ class DataStorePrayerSettingsPreferences @Inject constructor(
     }
 
     companion object {
+        val LOCATION_INITIALIZED = booleanPreferencesKey("location_initialized")
+
         val LATITUDE = doublePreferencesKey("latitude")
 
         val LONGITUDE = doublePreferencesKey("longitude")
@@ -112,6 +128,8 @@ class DataStorePrayerSettingsPreferences @Inject constructor(
         val METHOD = intPreferencesKey("method")
 
         val CITY_NAME = stringPreferencesKey("city_name")
+
+        val COUNTRY_NAME = stringPreferencesKey("country_name")
 
         val SCHOOL = intPreferencesKey("school")
 

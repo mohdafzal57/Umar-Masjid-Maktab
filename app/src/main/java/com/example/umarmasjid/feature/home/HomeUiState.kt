@@ -1,6 +1,12 @@
 package com.example.umarmasjid.feature.home
 
 import androidx.compose.runtime.Immutable
+import java.time.LocalDate
+import java.time.chrono.HijrahDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
+import java.util.Locale
 
 @Immutable
 data class HomeUiState(
@@ -11,16 +17,35 @@ data class HomeUiState(
     val attendanceTrend: List<AttendancePoint> = emptyList(),
     val attendancePeriod: AttendancePeriod = AttendancePeriod.SEVEN_DAYS,
     val recentStudents: List<StudentSummary> = emptyList(),
+    val isDarkMode: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null,
 )
 
 @Immutable
 data class IslamicDate(
-    val hijriDate: String = "15 Rajab 1446",
-    val gregorianDate: String = "Thursday, January 16, 2025",
-    val isDarkMode: Boolean = false,
+    val hijriDate: String = getHijriDate(),
+    val gregorianDate: String = getGregorianDate()
 )
+
+fun getGregorianDate(): String {
+    val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
+    return LocalDate.now().format(formatter)
+}
+
+fun getHijriDate(): String {
+    val hijri = HijrahDate.now()
+
+    val formatter = DateTimeFormatterBuilder()
+        .appendValue(ChronoField.DAY_OF_MONTH)
+        .appendLiteral(" ")
+        .appendText(ChronoField.MONTH_OF_YEAR) // Month name
+        .appendLiteral(" ")
+        .appendValue(ChronoField.YEAR)
+        .toFormatter(Locale.ENGLISH)
+
+    return formatter.format(hijri)
+}
 
 @Immutable
 data class PrayerTime(
@@ -31,14 +56,14 @@ data class PrayerTime(
 
 @Immutable
 data class DashboardStats(
-    val totalStudents: Int = 248,
-    val studentDelta: Int = 12,
-    val presentToday: Int = 235,
-    val attendanceRate: String = "94.8% rate",
-    val feesCollected: String = "₹18.5K",
+    val totalStudents: Int = 0,
+    val studentDelta: Int = 0,
+    val presentToday: Int = 0,
+    val attendanceRate: String = "",
+    val feesCollected: String = "",
     val feesCollectedPeriod: String = "This month",
-    val pendingFees: String = "₹4.2K",
-    val pendingStudentsCount: Int = 23,
+    val pendingFees: String = "",
+    val pendingStudentsCount: Int = 0,
 )
 
 @Immutable
@@ -52,11 +77,7 @@ data class StudentSummary(
     val id: Int,
     val initials: String,
     val name: String,
-    val grade: String,
-    val studentCode: String,
-    val attendancePercent: Int,
     val feeStatus: FeeStatus,
-    val avatarColor: Long,
 )
 
 enum class FeeStatus { PAID, PENDING }

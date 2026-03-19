@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.StudentWithAttendance
 import com.example.umarmasjid.repository.AttendanceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -22,27 +24,20 @@ class AttendanceViewModel @Inject constructor(
         .toInstant()
         .toEpochMilli()
 
-    private val _uiState =
-        MutableStateFlow<AttendanceState>(AttendanceState.Loading)
+    val uiState: StateFlow<AttendanceState> = attendanceRepository
+        .getStudentsWithAttendance(today)
+        .map { AttendanceState.Success(it) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = AttendanceState.Loading
+        )
 
-    val uiState = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            attendanceRepository
-                .getStudentsWithAttendance(today)
-                .collect { students ->
-                    _uiState.value = AttendanceState.Success(students)
-                }
-        }
-    }
-
-    fun onAction(event: AttendanceAction) {
-        when (event) {
+    fun onAction(action: AttendanceAction) {
+        when (action) {
             is AttendanceAction.MarkAttendance -> {
-                toggleAttendance(event.studentId, event.isPresent)
+                toggleAttendance(action.studentId, action.isPresent)
             }
-
             AttendanceAction.MarkAllAbsent -> {}
             AttendanceAction.MarkAllPresent -> {}
             AttendanceAction.ResetAttendance -> {}

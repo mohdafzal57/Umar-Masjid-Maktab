@@ -1,6 +1,6 @@
 package com.example.umarmasjid.di
 
-import com.example.umarmasjid.data.networking.OfflineFirstPrayerTimesRepository
+import com.example.umarmasjid.data.repository.OfflineFirstPrayerTimesRepository
 import com.example.umarmasjid.domain.repository.PrayerTimesRepository
 import dagger.Binds
 import dagger.Module

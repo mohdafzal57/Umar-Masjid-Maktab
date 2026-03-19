@@ -30,6 +30,6 @@ fun UmarMasjidNavGraph(
         entries = navigationState.toEntries(entryProvider),
         onBack = { navigator.goBack() },
         modifier = modifier,
-        predictivePopTransitionSpec = { NoneTransition }
+        predictivePopTransitionSpec = noneTransition()
     )
 }

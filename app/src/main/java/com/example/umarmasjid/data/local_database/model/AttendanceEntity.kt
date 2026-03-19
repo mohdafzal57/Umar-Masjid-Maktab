@@ -6,7 +6,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "attendances",
+@Entity(
+    tableName = "attendances",
     foreignKeys = [
         ForeignKey(
             entity = StudentEntity::class,
@@ -15,7 +16,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("student_id")]
+    indices = [ Index(value = ["student_id", "id"], unique = true) ]
 )
 data class AttendanceEntity(
     @PrimaryKey(autoGenerate = true)
@@ -31,3 +32,7 @@ data class AttendanceEntity(
     val isPresent: Boolean,
 )
 
+data class DailyAttendanceCount(
+    @ColumnInfo(name = "attendance_date") val date: Long,
+    @ColumnInfo(name = "presentCount") val presentCount: Int
+)

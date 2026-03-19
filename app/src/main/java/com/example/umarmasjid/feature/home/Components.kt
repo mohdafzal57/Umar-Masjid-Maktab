@@ -1,7 +1,16 @@
 package com.example.umarmasjid.feature.home
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,11 +21,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +48,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.random.Random
@@ -47,6 +60,7 @@ fun IslamicDateCard(
     islamicDate: IslamicDate,
     onToggleDarkMode: () -> Unit,
     modifier: Modifier = Modifier,
+    isDarkMode: Boolean,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -90,7 +104,7 @@ fun IslamicDateCard(
                         CircleShape
                     ),
             ) {
-                Text(if (islamicDate.isDarkMode) "☀️" else "🌙", fontSize = 20.sp)
+                Text(if (isDarkMode) "☀️" else "🌙", fontSize = 20.sp)
             }
         }
     }
@@ -186,7 +200,8 @@ private fun PrayerTimeItem(prayer: PrayerTime) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = prayer.time,
+                text = prayer.time.replace(" ", "\n"),
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 letterSpacing = (-0.5).sp
@@ -595,31 +610,181 @@ fun StudentEntryRow(
             )
         }
         Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = student.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "${student.grade} • ${student.studentCode}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = "${student.attendancePercent}%",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = if (student.attendancePercent >= 90) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-            )
-            Text(
-                text = if (student.feeStatus == FeeStatus.PAID) "Paid" else "Pending",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (student.feeStatus == FeeStatus.PAID) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
-            )
+        Text(
+            text = student.name,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = if (student.feeStatus == FeeStatus.PAID) "Paid" else "Pending",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (student.feeStatus == FeeStatus.PAID) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
+            modifier = Modifier
+        )
+    }
+}
+
+@Composable
+fun PrayerTimingsLoadingCard(
+    modifier: Modifier = Modifier,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+    val shimmerOffset by infiniteTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = LinearEasing),
+        ),
+        label = "shimmerOffset",
+    )
+    val dotAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "dotAlpha",
+    )
+    val crescentOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "crescentFloat",
+    )
+
+    val shimmerBrush = Brush.horizontalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.07f),
+            Color.White.copy(alpha = 0.18f),
+            Color.White.copy(alpha = 0.07f),
+        ),
+        startX = shimmerOffset * 400f,
+        endX = shimmerOffset * 400f + 400f,
+    )
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.08f)
+        ),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f)),
+        elevation = CardDefaults.cardElevation(0.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Top row: mosque name + fetching badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "☽",
+                        fontSize = 18.sp,
+                        modifier = Modifier.offset(y = crescentOffset.dp),
+                    )
+                    Text(
+                        text = "Umar Masjid",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
+                        .border(
+                            0.5.dp,
+                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f),
+                            CircleShape,
+                        )
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF7DD3A8).copy(alpha = dotAlpha)),
+                    )
+                    Text(
+                        text = "Fetching timings",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                    )
+                }
+            }
+
+            // Islamic date shimmer lines
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.55f)
+                        .height(11.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(shimmerBrush),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.38f)
+                        .height(11.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(shimmerBrush),
+                )
+            }
+
+            // Prayer time slots
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                repeat(5) { i ->
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.06f))
+                            .border(
+                                0.5.dp,
+                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
+                                RoundedCornerShape(10.dp),
+                            )
+                            .padding(vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(36.dp)
+                                .height(9.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(shimmerBrush),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(44.dp)
+                                .height(12.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(shimmerBrush),
+                        )
+                    }
+                }
+            }
         }
     }
 }

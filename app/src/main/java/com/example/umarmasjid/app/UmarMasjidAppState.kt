@@ -1,7 +1,5 @@
 package com.example.umarmasjid.app
 
-import androidx.compose.material3.BottomAppBarDefaults
-import androidx.compose.material3.BottomAppBarScrollBehavior
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -13,7 +11,6 @@ import com.example.umarmasjid.navigation.rememberUmarMasjidNavigationState
 class UmarMasjidAppState(
     val navigationState: UmarMasjidNavigationState,
     val navigator: UmarMasjidNavigator,
-    val scrollBehavior: BottomAppBarScrollBehavior
 ) {
     val currentRoute get() = navigationState.currentKey
     val showBottomBar get() = navigationState.showBottomBar
@@ -22,11 +19,10 @@ class UmarMasjidAppState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun rememberUmarMasjidAppState(
-    navigationState: UmarMasjidNavigationState = rememberUmarMasjidNavigationState(),
-    scrollBehavior: BottomAppBarScrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    navigationState: UmarMasjidNavigationState = rememberUmarMasjidNavigationState()
 ): UmarMasjidAppState {
     val navigator = remember(navigationState) { UmarMasjidNavigator(navigationState) }
-    return remember(navigationState, navigator, scrollBehavior) {
-        UmarMasjidAppState(navigationState, navigator, scrollBehavior)
+    return remember(navigationState, navigator) {
+        UmarMasjidAppState(navigationState, navigator)
     }
 }

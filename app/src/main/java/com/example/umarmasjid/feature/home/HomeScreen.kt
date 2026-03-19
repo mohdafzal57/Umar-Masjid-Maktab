@@ -1,5 +1,6 @@
 package com.example.umarmasjid.feature.home
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,12 +23,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,10 +42,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.umarmasjid.feature.settings.SettingsActivity
 
 @Composable
 fun HomeScreen(
@@ -145,25 +149,12 @@ internal fun HomeScreenContent(
             }
         }
 
-        if (state.isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
         if (!showHeader) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .windowInsetsTopHeight(WindowInsets.statusBars)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    )
+                    .background(MaterialTheme.colorScheme.primaryContainer)
             )
         }
     }
@@ -174,6 +165,7 @@ private fun HomeHeader(
     state: HomeUiState,
     onAction: (HomeAction) -> Unit,
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -194,30 +186,41 @@ private fun HomeHeader(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Admin Dashboard",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
+                        text = "“Excellence in service is a form of worship.”",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 14.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
                     )
                 }
                 IconButton(
-                    onClick = { },
+                    onClick = {
+                        val intent = Intent(context, SettingsActivity::class.java)
+                        context.startActivity(intent)
+                    },
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(MaterialTheme.shapes.medium)
+                        .clip(MaterialTheme.shapes.extraLarge)
                         .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f)),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }
-            IslamicDateCard(
-                islamicDate = state.islamicDate,
-                onToggleDarkMode = { onAction(HomeAction.ToggleDarkMode) },
-            )
-            PrayerTimesCard(prayerTimes = state.prayerTimes)
+            if (state.isLoading) {
+                PrayerTimingsLoadingCard()
+            } else {
+                IslamicDateCard(
+                    isDarkMode = state.isDarkMode,
+                    islamicDate = state.islamicDate,
+                    onToggleDarkMode = { onAction(HomeAction.ToggleDarkMode) },
+                )
+                PrayerTimesCard(prayerTimes = state.prayerTimes)
+            }
         }
     }
 }

@@ -1,81 +1,122 @@
 package com.example.umarmasjid
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.umarmasjid.app.UmarMasjidApp
+import androidx.compose.runtime.getValue
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.umarmasjid.app.UmarMasjidRoot
+import com.example.umarmasjid.ui.theme.UmarMasjidTheme
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.Priority
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    val locationViewModel: LocationViewModel by viewModels()
+    private val viewModel: MainActivityViewModel by viewModels()
+
+    private val resolutionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            viewModel.fetchLocationOnce()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
-            val context = LocalContext.current
+            val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
+            val isLocationInitialized by viewModel.isLocationInitialized.collectAsStateWithLifecycle()
 
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
             ) { permissions ->
-                if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
-                    locationViewModel.updateLocationAutomatically()
+                val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                        permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+                if (granted) {
+                    checkAndEnableLocation {
+                        viewModel.fetchLocationOnce()
+                    }
                 }
             }
-            LaunchedEffect(Unit) {
-                permissionLauncher.launch(arrayOf(
+
+            // Only request location if we know for sure it's not initialized (is false, not null)
+            LaunchedEffect(isLocationInitialized) {
+                if (isLocationInitialized == false) {
+                    requestLocation(permissionLauncher)
+                }
+            }
+
+            UmarMasjidTheme(darkMode) {
+                UmarMasjidRoot()
+            }
+        }
+    }
+
+    private fun requestLocation(
+        launcher: ActivityResultLauncher<Array<String>>
+    ) {
+        val fineGranted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseGranted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (fineGranted || coarseGranted) {
+            checkAndEnableLocation {
+                viewModel.fetchLocationOnce()
+            }
+        } else {
+            launcher.launch(
+                arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
-                ))
+                )
+            )
+        }
+    }
+
+    private fun checkAndEnableLocation(onEnabled: () -> Unit) {
+        val request = LocationRequest.Builder(
+            Priority.PRIORITY_LOW_POWER,
+            1000
+        ).build()
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(request)
+        val client = LocationServices.getSettingsClient(this)
+        val task = client.checkLocationSettings(builder.build())
+
+        task.addOnSuccessListener { onEnabled() }
+        task.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException) {
+                try {
+                    val intentSenderRequest =
+                        IntentSenderRequest.Builder(exception.resolution.intentSender).build()
+                    resolutionLauncher.launch(intentSenderRequest)
+                } catch (e: Exception) {
+                    // Ignore or log
+                }
             }
-            UmarMasjidApp()
-        }
-    }
-}
-
-@Composable
-fun LocationSettingsScreen(viewModel: LocationViewModel = hiltViewModel()) {
-    val context = LocalContext.current
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
-            viewModel.updateLocationAutomatically()
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = {
-            permissionLauncher.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ))
-        }) {
-            Icon(Icons.Default.MyLocation, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Detect My Location Automatically")
         }
     }
 }

@@ -1,12 +1,18 @@
 package com.example.umarmasjid.feature.attendance
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,14 +25,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,17 +53,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.umarmasjid.data.local_database.model.StudentWithAttendance
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun AttendanceScreen(
@@ -96,7 +106,6 @@ fun AttendanceScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    item { AttendanceDateCard() }
                     item {
                         AttendanceSummaryCard(
                             presentCount = presentCount,
@@ -181,143 +190,94 @@ fun AttendanceTopAppBar(
 }
 
 @Composable
-fun AttendanceDateCard() {
-    val currentDate = remember { System.currentTimeMillis() }
-    val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault())
-    val islamicDate = "18 RAMADHAN 1447 AH"
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Today,
-                        contentDescription = "Today",
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = dateFormat.format(Date(currentDate)),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = islamicDate,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun AttendanceSummaryCard(
     presentCount: Int,
     absentCount: Int,
     totalStudents: Int
 ) {
-    val attendanceRate = if (totalStudents > 0) {
-        (presentCount.toFloat() / totalStudents * 100).toInt()
-    } else 0
+    val attendanceRate = remember(presentCount, totalStudents) {
+        if (totalStudents > 0) ((presentCount.toFloat() / totalStudents) * 100).toInt() else 0
+    }
+
+    val gradientColors = remember(attendanceRate) {
+        when {
+            attendanceRate >= 85 -> listOf(Color(0xFF4CAF50), Color(0xFF8BC34A))
+            attendanceRate >= 70 -> listOf(Color(0xFF2196F3), Color(0xFF03A9F4))
+            else -> listOf(Color(0xFFF44336), Color(0xFFFF9800))
+        }
+    }
+
+    val animatedRate by animateIntAsState(
+        targetValue = attendanceRate,
+        animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
+        label = "RateTicker"
+    )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        shape = MaterialTheme.shapes.large
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // LEFT SIDE: Text and Stats aligned in a compact column
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Analytics,
-                    contentDescription = "Analytics",
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Today's Summary",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = when {
-                        attendanceRate >= 80 -> MaterialTheme.colorScheme.primaryContainer
-                        attendanceRate >= 60 -> MaterialTheme.colorScheme.tertiaryContainer
-                        else -> MaterialTheme.colorScheme.errorContainer
-                    }
-                ) {
+                // Title and Total Enrolled
+                Column {
                     Text(
-                        text = "$attendanceRate%",
+                        text = "Today's Attendance",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        color = when {
-                            attendanceRate >= 80 -> MaterialTheme.colorScheme.onPrimaryContainer
-                            attendanceRate >= 60 -> MaterialTheme.colorScheme.onTertiaryContainer
-                            else -> MaterialTheme.colorScheme.onErrorContainer
-                        }
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Total Enrolled: $totalStudents",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Inline Present / Absent Pills
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CompactStatPill(
+                        count = presentCount,
+                        color = Color(0xFF4CAF50),
+                        icon = Icons.Rounded.CheckCircle
+                    )
+                    CompactStatPill(
+                        count = absentCount,
+                        color = Color(0xFFF44336),
+                        icon = Icons.Rounded.Cancel
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+
+            // RIGHT SIDE: The Compact Arc Gauge
+            CompactArcGauge(
+                percentage = attendanceRate / 100f,
+                colors = gradientColors,
+                modifier = Modifier.size(72.dp),
+                strokeWidth = 8.dp
             ) {
-                AttendanceStatItem(
-                    icon = Icons.Default.CheckCircle,
-                    value = "$presentCount",
-                    label = "Present",
-                    color = MaterialTheme.colorScheme.primary,
-                    backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                )
-                AttendanceStatItem(
-                    icon = Icons.Default.Cancel,
-                    value = "$absentCount",
-                    label = "Absent",
-                    color = MaterialTheme.colorScheme.error,
-                    backgroundColor = MaterialTheme.colorScheme.errorContainer
-                )
-                AttendanceStatItem(
-                    icon = Icons.Default.Group,
-                    value = "$totalStudents",
-                    label = "Total",
-                    color = MaterialTheme.colorScheme.secondary,
-                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer
+                Text(
+                    text = "$animatedRate%",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -325,44 +285,116 @@ fun AttendanceSummaryCard(
 }
 
 @Composable
-fun AttendanceStatItem(
-    icon: ImageVector,
-    value: String,
-    label: String,
-    color: Color,
-    backgroundColor: Color
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            shape = CircleShape,
-            color = backgroundColor,
-            modifier = Modifier.size(48.dp)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = color
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+private fun CompactStatPill(count: Int, color: Color, icon: ImageVector) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
+            text = "$count",
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
+    }
+}
+
+@Composable
+private fun CompactArcGauge(
+    percentage: Float,
+    colors: List<Color>,
+    modifier: Modifier = Modifier,
+    strokeWidth: Dp = 8.dp,
+    centerContent: @Composable () -> Unit
+) {
+    val animatedSweep by animateFloatAsState(
+        targetValue = 240f * percentage,
+        animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
+        label = "ArcSweep"
+    )
+
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidthPx = strokeWidth.toPx()
+            val sizeOffset = strokeWidthPx / 2
+            val arcSize = Size(size.width - strokeWidthPx, size.height - strokeWidthPx)
+
+            drawArc(
+                color = trackColor,
+                startAngle = 150f,
+                sweepAngle = 240f,
+                useCenter = false,
+                topLeft = Offset(sizeOffset, sizeOffset),
+                size = arcSize,
+                style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+            )
+
+            if (animatedSweep > 0f) {
+                drawArc(
+                    brush = Brush.sweepGradient(colors),
+                    startAngle = 150f,
+                    sweepAngle = animatedSweep,
+                    useCenter = false,
+                    topLeft = Offset(sizeOffset, sizeOffset),
+                    size = arcSize,
+                    style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+                )
+            }
+        }
+        centerContent()
+    }
+}
+
+@Composable
+fun ColumnScope.BentoStatBox(
+    title: String,
+    count: Int,
+    icon: ImageVector,
+    iconTint: Color,
+    modifier: Modifier = Modifier
+) {
+    // Animate the numbers in the side boxes too!
+    val animatedCount by animateIntAsState(
+        targetValue = count,
+        animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
+        label = "CountTicker"
+    )
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconTint,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "$animatedCount",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
