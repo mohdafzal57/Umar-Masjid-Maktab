@@ -35,7 +35,7 @@ class DataStorePrayerSettingsPreferences @Inject constructor(
             midnightMode = prefs[MIDNIGHT_MODE] ?: 0,
             latitudeAdjustmentMethod = prefs[LAT_ADJUSTMENT],
             calendarMethod = prefs[CALENDAR_METHOD] ?: "MATHEMATICAL",
-            timezone = prefs[TIMEZONE] ?: "Asia/Kolkata",
+            timezone = prefs[TIMEZONE],
             shafaq = prefs[SHAFAQ],
             tune = prefs[TUNE],
             adjustment = prefs[ADJUSTMENT] ?: -1,
