@@ -3,3 +3,24 @@ Payments Screen --
     @change entire screen's ui similar to app's theme for Payments Screen.
     @change paid/unpaid items ui
     @change bottom bar condition to not hide when user in payments screen.
+
+Students Screen --
+
+    @add search screen for student search.
+    @add profile image of student feature.
+    @fix the window insets if required after search screen.
+    @student item need to fix or should add drop down menu.
+    @addtendance chart screen transition animation.
+    @bottom sheet ui colors.
+
+Home Screen --
+
+    @change message.
+    @fix the feature of enabling dark mode and add system theme (necessary).
+    @fix dark mode doesn't work other activities.
+    @homedashboard item's charts fix and Ui text adjustments.
+    @fix - Attendance trend.
+
+Setting Activity --
+    @Refactor all the functionality using best practices.
+    @Migrate to composable screen and navigation instead of changing a new activity.
