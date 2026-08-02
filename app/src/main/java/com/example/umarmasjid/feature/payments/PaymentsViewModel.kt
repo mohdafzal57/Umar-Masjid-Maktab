@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,6 +33,7 @@ class PaymentsViewModel @Inject constructor(
     private fun loadData() {
         viewModelScope.launch {
             _studentsWithPaymentStatus.update { it.copy(isLoading = true) }
+
             combine(
                 paymentRepository.getAllStudentsWithPaymentWithinMonth(start, end),
                 studentRepository.getStudentsWhoNotPaid(start, end)
@@ -54,8 +54,7 @@ class PaymentsViewModel @Inject constructor(
     fun insertPayment(
         studentId: Int,
         amount: Double,
-        paymentMethod: String,
-        receiptNumber: String?,
+        note: String?
     ) {
         viewModelScope.launch {
             paymentRepository.insertPayment(
@@ -63,8 +62,7 @@ class PaymentsViewModel @Inject constructor(
                     studentId = studentId,
                     paymentDate = System.currentTimeMillis(),
                     amount = amount,
-                    paymentMethod = paymentMethod,
-                    receiptNumber = receiptNumber ?: UUID.randomUUID().toString()
+                    note = note
                 )
             )
         }

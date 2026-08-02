@@ -22,42 +22,47 @@ interface PaymentDao {
     @Delete
     suspend fun deletePayment(payment: PaymentEntity)
 
-    @Query("""
-    SELECT 
-        s.id AS studentId,
-        s.name AS studentName,
-        s.phone_number AS phoneNumber,
-        p.payment_date AS paymentDate,
-        p.amount AS amount,
-        p.payment_method AS paymentMethod
-    FROM students s
-    INNER JOIN payments p ON s.id = p.student_id
-    WHERE p.payment_date BETWEEN :startOfMonth AND :endOfMonth
-""")
+    @Query(
+        """
+        SELECT 
+            s.id AS studentId,
+            s.name AS studentName,
+            s.phone_number AS phoneNumber,
+            p.payment_date AS paymentDate,
+            p.amount AS amount,
+            p.note AS note
+        FROM students s
+        INNER JOIN payments p ON s.id = p.student_id
+        WHERE p.payment_date BETWEEN :startOfMonth AND :endOfMonth
+        """
+    )
     fun getAllStudentsWithPayment(
         startOfMonth: Long,
         endOfMonth: Long
     ): Flow<List<StudentWithPayment>>
 
-    @Query( """
-             SELECT 
-            id AS id,
-            student_id AS student_id,
-            payment_date AS payment_date,
-            amount AS amount,
-            payment_method AS payment_method,
-            receipt_number AS receipt_number
+    @Query(
+        """
+        SELECT
+            id,
+            student_id,
+            payment_date,
+            amount,
+            note
         FROM payments
         WHERE student_id = :studentId
-        """)
+        ORDER BY payment_date DESC
+        """
+    )
     fun getPaymentsTillNowByStudentId(
         studentId: Int
     ): Flow<List<PaymentEntity>>
 
     @Query(
         """
-            SELECT SUM(amount) FROM payments
-            WHERE payment_date BETWEEN :startOfMonth AND :endOfMonth
+        SELECT SUM(amount)
+        FROM payments
+        WHERE payment_date BETWEEN :startOfMonth AND :endOfMonth
         """
     )
     fun getMonthlyPaymentTotal(

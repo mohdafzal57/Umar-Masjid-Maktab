@@ -14,7 +14,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import com.example.umarmasjid.feature.attendance.StudentAttendanceNavKey
 import com.example.umarmasjid.feature.home.HomeNavKey
 
 /**
@@ -141,8 +140,7 @@ class UmarMasjidNavigationState(
     val currentKey: NavKey by derivedStateOf { currentSubStack.last() }
 
     val showBottomBar: Boolean
-        get() = currentTopLevelKey is HomeNavKey ||
-                currentTopLevelKey is StudentAttendanceNavKey
+        get() = currentTopLevelKey in TOP_LEVEL_NAV_ITEMS
 }
 
 /**

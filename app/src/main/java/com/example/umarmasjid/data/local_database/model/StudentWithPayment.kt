@@ -6,6 +6,5 @@ data class StudentWithPayment(
     val phoneNumber: String,
     val paymentDate: Long,
     val amount: Double,
-    val paymentMethod: String,
-    val receiptNumber: String?
+    val note: String?
 )

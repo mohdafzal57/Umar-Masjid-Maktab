@@ -16,21 +16,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.CurrencyRupee
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.BottomSheetDefaults
@@ -48,7 +45,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
@@ -60,13 +56,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -183,8 +179,14 @@ fun StudentPaymentScreen(
                     sheetState = sheetState,
                     studentName = student.name,
                     onDismiss = { showAddPaymentSheet = false },
-                    onAddPayment = { amount, method, receiptNumber ->
-                        onEvent(PaymentEvent.AddPayment(student.id, amount, method, receiptNumber))
+                    onAddPayment = { amount, note ->
+                        onEvent(
+                            PaymentEvent.AddPayment(
+                                studentId = student.id,
+                                amount = amount,
+                                note = note
+                            )
+                        )
                     }
                 )
             }
@@ -409,16 +411,8 @@ fun PaymentHistoryCard(
     payment: PaymentEntity,
     onDelete: () -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
-
-    val paymentIcon = when (payment.paymentMethod.lowercase()) {
-        "credit card" -> Icons.Default.CreditCard
-        "bank transfer" -> Icons.Default.AccountBalance
-        "cash" -> Icons.Default.AttachMoney
-        "upi" -> Icons.Default.QrCode
-        else -> Icons.Default.Payment
-    }
+    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -438,11 +432,11 @@ fun PaymentHistoryCard(
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = paymentIcon,
+                        imageVector = Icons.Default.Payments,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -452,28 +446,28 @@ fun PaymentHistoryCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = currencyFormat.format(payment.amount),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold
                 )
-                Text(
-                    text = payment.paymentMethod,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+
                 Text(
                     text = dateFormat.format(Date(payment.paymentDate)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                payment.receiptNumber?.let {
+
+                payment.note?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        text = "Receipt: $it",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -486,37 +480,25 @@ fun PaymentHistoryCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Payment",
-                    modifier = Modifier.size(20.dp)
+                    contentDescription = "Delete Payment"
                 )
             }
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPaymentBottomSheet(
     sheetState: SheetState,
     studentName: String,
     onDismiss: () -> Unit,
-    onAddPayment: (Double, String, String?) -> Unit
+    onAddPayment: (Double, String?) -> Unit
 ) {
-    var amount by remember { mutableStateOf("") }
-    var selectedPaymentMethod by remember { mutableStateOf("Credit Card") }
-    var receiptNumber by remember { mutableStateOf("") }
-    var amountError by remember { mutableStateOf(false) }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var note by rememberSaveable { mutableStateOf("") }
+    var amountError by rememberSaveable { mutableStateOf(false) }
 
-    val paymentMethods = remember {
-        listOf(
-            PaymentMethod("Credit Card", Icons.Default.CreditCard, "Visa, MasterCard, etc."),
-            PaymentMethod("Bank Transfer", Icons.Default.AccountBalance, "NEFT, RTGS, IMPS"),
-            PaymentMethod("UPI", Icons.Default.QrCode, "GPay, PhonePe, Paytm"),
-            PaymentMethod("Cash", Icons.Default.AttachMoney, "Physical cash payment")
-        )
-    }
-
-    val isValidAmount = amount.toDoubleOrNull()?.let { it > 0 } ?: false
+    val isValidAmount = amount.toDoubleOrNull()?.let { it > 0 } == true
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -532,6 +514,7 @@ fun AddPaymentBottomSheet(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -543,13 +526,16 @@ fun AddPaymentBottomSheet(
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
                 )
+
                 Spacer(modifier = Modifier.width(12.dp))
+
                 Column {
                     Text(
                         text = "Add Payment",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
+
                     Text(
                         text = "For $studentName",
                         style = MaterialTheme.typography.bodyMedium,
@@ -558,140 +544,82 @@ fun AddPaymentBottomSheet(
                 }
             }
 
-            // Amount Input
+            // Amount
             OutlinedTextField(
                 value = amount,
                 onValueChange = {
                     amount = it
-                    amountError = it.toDoubleOrNull()?.let { amount -> amount <= 0 } ?: it.isNotEmpty()
+                    amountError =
+                        it.isNotEmpty() && (it.toDoubleOrNull()?.let { value -> value <= 0 } != false)
                 },
-                label = { Text("Payment Amount") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                isError = amountError,
-                supportingText = if (amountError) {
-                    { Text("Please enter a valid amount") }
-                } else null,
+                label = { Text("Amount Paid") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.CurrencyRupee,
                         contentDescription = null
                     )
                 },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                prefix = { Text("$") }
-            )
-
-            // Payment Method Selection
-            Text(
-                text = "Payment Method",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            paymentMethods.forEach { method ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = selectedPaymentMethod == method.name,
-                            onClick = { selectedPaymentMethod = method.name },
-                            role = Role.RadioButton
-                        ),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selectedPaymentMethod == method.name) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    ),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = method.icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = if (selectedPaymentMethod == method.name) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = method.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = method.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (selectedPaymentMethod == method.name) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                }
-                            )
-                        }
-                        RadioButton(
-                            selected = selectedPaymentMethod == method.name,
-                            onClick = null
-                        )
+                isError = amountError,
+                supportingText = {
+                    if (amountError) {
+                        Text("Please enter a valid amount")
                     }
-                }
-            }
-
-            // Receipt Number Input
-            OutlinedTextField(
-                value = receiptNumber,
-                onValueChange = { receiptNumber = it },
-                label = { Text("Receipt Number (Optional)") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Receipt,
-                        contentDescription = null
-                    )
                 },
-                singleLine = true,
                 shape = MaterialTheme.shapes.medium
             )
 
-            // Action Button
+            // Optional Note
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Note (Optional)") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.EditNote,
+                        contentDescription = null
+                    )
+                },
+                maxLines = 2,
+                shape = MaterialTheme.shapes.medium
+            )
+
             Button(
                 onClick = {
-                    val amountValue = amount.toDoubleOrNull()
-                    if (amountValue != null && amountValue > 0) {
-                        onAddPayment(
-                            amountValue,
-                            selectedPaymentMethod,
-                            receiptNumber.takeIf { it.isNotBlank() }
-                        )
-                        onDismiss()
-                    } else {
+                    amount.toDoubleOrNull()?.let { value ->
+                        if (value > 0) {
+                            onAddPayment(
+                                value,
+                                note.takeIf { it.isNotBlank() }
+                            )
+                            onDismiss()
+                        } else {
+                            amountError = true
+                        }
+                    } ?: run {
                         amountError = true
                     }
                 },
                 enabled = isValidAmount,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
                 shape = MaterialTheme.shapes.medium
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
-                    text = "Add Payment",
+                    text = "Save Payment",
                     style = MaterialTheme.typography.titleMedium
                 )
             }

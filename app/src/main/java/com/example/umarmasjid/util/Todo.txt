@@ -1,8 +1,8 @@
 Payments Screen --
 
-    @change entire screen's ui similar to app's theme for Payments Screen.
-    @change paid/unpaid items ui
-    @change bottom bar condition to not hide when user in payments screen.
+    ✔️ @change entire screen's ui similar to app's theme for Payments Screen.
+    ✔️ @change paid/unpaid items ui
+    ✔️ @change bottom bar condition to not hide when user in payments screen.
 
 Students Screen --
 

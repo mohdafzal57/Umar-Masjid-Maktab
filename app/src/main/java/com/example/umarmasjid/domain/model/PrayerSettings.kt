@@ -10,7 +10,7 @@ data class PrayerSettings(
     val midnightMode: Int,
     val latitudeAdjustmentMethod: Int?,
     val calendarMethod: String,
-    val timezone: String,
+    val timezone: String?,
     val shafaq: String?,
     val tune: String?,
     val adjustment: Int?,

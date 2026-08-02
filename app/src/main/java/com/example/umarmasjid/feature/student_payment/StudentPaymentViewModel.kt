@@ -57,21 +57,20 @@ class StudentPaymentViewModel @AssistedInject constructor(
                         PaymentEntity(
                             studentId = event.studentId,
                             amount = event.amount,
-                            paymentMethod = event.paymentMethod,
-                            receiptNumber = event.receiptNumber,
+                            note = event.note,
                             paymentDate = System.currentTimeMillis()
                         )
                     )
                 }
             }
+
             is PaymentEvent.DeletePayment -> {
                 viewModelScope.launch {
                     paymentRepository.deletePayment(event.payment)
                 }
             }
         }
-    }
-}
+    }}
 
 data class StudentPaymentState(
     val student: StudentEntity? = null,
@@ -79,12 +78,14 @@ data class StudentPaymentState(
 )
 
 sealed class PaymentEvent {
+
     data class AddPayment(
         val studentId: Int,
         val amount: Double,
-        val paymentMethod: String,
-        val receiptNumber: String?
+        val note: String?
     ) : PaymentEvent()
 
-    data class DeletePayment(val payment: PaymentEntity) : PaymentEvent()
+    data class DeletePayment(
+        val payment: PaymentEntity
+    ) : PaymentEvent()
 }

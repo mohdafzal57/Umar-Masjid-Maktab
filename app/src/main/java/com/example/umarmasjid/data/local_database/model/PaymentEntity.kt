@@ -6,7 +6,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "payments",
+@Entity(
+    tableName = "payments",
     foreignKeys = [
         ForeignKey(
             entity = StudentEntity::class,
@@ -18,6 +19,7 @@ import androidx.room.PrimaryKey
     indices = [Index("student_id")]
 )
 data class PaymentEntity(
+
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
@@ -30,10 +32,6 @@ data class PaymentEntity(
     @ColumnInfo(name = "amount")
     val amount: Double,
 
-    @ColumnInfo(name = "payment_method")
-    val paymentMethod: String,
-
-    @ColumnInfo(name = "receipt_number")
-    val receiptNumber: String?
+    @ColumnInfo(name = "note")
+    val note: String? = null
 )
-

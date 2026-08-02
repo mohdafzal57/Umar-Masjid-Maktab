@@ -1,21 +1,19 @@
 package com.example.umarmasjid.feature.payments.components
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -23,83 +21,39 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import com.example.umarmasjid.data.local_database.model.StudentWithPayment
-
-@Composable
-fun EmptyPaidState2() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(64.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "No paid students yet",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-fun EmptyUnpaidState2(totalStudents: Int) {
-    val message = if (totalStudents == 0) {
-        "No students added yet"
-    } else {
-        "All students have paid 🎉"
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.School,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(64.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
+import com.example.umarmasjid.feature.student_payment.AddPaymentBottomSheet
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun PaidStudentsPage(students: List<StudentWithPayment>, isLoading: Boolean) {
@@ -107,8 +61,9 @@ fun PaidStudentsPage(students: List<StudentWithPayment>, isLoading: Boolean) {
         EmptyPaidState()
     } else {
         LazyColumn(
-            contentPadding = PaddingValues(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(students) { student ->
                 PaidStudentCard(student = student)
@@ -121,15 +76,16 @@ fun PaidStudentsPage(students: List<StudentWithPayment>, isLoading: Boolean) {
 fun UnpaidStudentsPage(
     students: List<StudentEntity>,
     isLoading: Boolean,
-    onPaymentDone: (Int, Double, String, String?) -> Unit,
+    onPaymentDone: (Int, Double, String?) -> Unit,
     totalStudents: Int
 ) {
     if (students.isEmpty() && !isLoading) {
         EmptyUnpaidState(totalStudents = totalStudents)
     } else {
         LazyColumn(
-            contentPadding = PaddingValues(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(students) { student ->
                 UnpaidStudentCard(
@@ -142,6 +98,181 @@ fun UnpaidStudentsPage(
 }
 
 @Composable
+fun PaidStudentCard(student: StudentWithPayment) {
+    val dateFormat = SimpleDateFormat("dd MMM, yyyy", Locale.getDefault())
+
+    val successColor = MaterialTheme.colorScheme.primary
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(successColor.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = successColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = student.studentName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = dateFormat.format(Date(student.paymentDate)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Text(
+                text = "₹${student.amount.toInt()}",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UnpaidStudentCard(
+    student: StudentEntity,
+    onPaymentDone: (Int, Double, String?) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showAddPaymentSheet by remember { mutableStateOf(false) }
+
+    val accentColor = MaterialTheme.colorScheme.secondary
+    val warningColor = MaterialTheme.colorScheme.tertiary
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(accentColor.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = student.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "Pending Payment",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = warningColor
+                )
+            }
+
+            Button(
+                onClick = { showAddPaymentSheet = true },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                contentPadding = PaddingValues(
+                    horizontal = 16.dp,
+                    vertical = 8.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Payments,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = "Pay",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+
+    if (showAddPaymentSheet) {
+        AddPaymentBottomSheet(
+            sheetState = sheetState,
+            studentName = student.name,
+            onDismiss = { showAddPaymentSheet = false },
+            onAddPayment = { amount, note ->
+                onPaymentDone(
+                    student.id,
+                    amount,
+                    note
+                )
+            }
+        )
+    }
+}
+
+@Composable
 fun EmptyPaidState() {
     Box(
         modifier = Modifier
@@ -150,59 +281,39 @@ fun EmptyPaidState() {
         contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Animated success illustration
-            val infiniteTransition = rememberInfiniteTransition()
-            val scale by infiniteTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2000),
-                    repeatMode = RepeatMode.Reverse
-                )
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .scale(scale)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF4CAF50).copy(alpha = 0.3f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(100.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "No payments yet",
-                    tint = Color(0xFF4CAF50),
-                    modifier = Modifier.size(60.dp)
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "No Payments Yet",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = Color.White,
-                textAlign = TextAlign.Center
+                text = "No Payments Found",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Payments will appear here once students start making payments",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.7f),
+                text = "Once students start paying, their transaction history will appear here.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
         }
@@ -211,6 +322,8 @@ fun EmptyPaidState() {
 
 @Composable
 fun EmptyUnpaidState(totalStudents: Int) {
+    val successColor = MaterialTheme.colorScheme.primary
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -218,83 +331,102 @@ fun EmptyUnpaidState(totalStudents: Int) {
         contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Celebratory animation
-            val infiniteTransition = rememberInfiniteTransition()
-            val rotation by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(3000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                )
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .rotate(rotation)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFD700).copy(alpha = 0.3f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(100.dp),
+                shape = CircleShape,
+                color = successColor.copy(alpha = 0.1f)
             ) {
-                Icon(
-                    imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = "All paid",
-                    tint = Color(0xFFFFD700),
-                    modifier = Modifier.size(60.dp)
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = null,
+                        tint = successColor,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "🎉 All Caught Up!",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = Color.White,
-                textAlign = TextAlign.Center
+                text = "Great Job!",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = if (totalStudents > 0) {
-                    "Amazing! All $totalStudents students have made their payments"
+                    "All $totalStudents students have completed their payments for this period."
                 } else {
-                    "No pending payments at the moment"
+                    "There are no pending payments at the moment."
                 },
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(20.dp))
+@Preview(name = "Unpaid - Light", showBackground = true)
+@Composable
+fun UnpaidStudentCardLightPreview() {
+    MaterialTheme(colorScheme = lightColorScheme()) {
+        UnpaidStudentCard(
+            student = StudentEntity(
+                id = 1,
+                name = "Priya Singh",
+                phoneNumber = "12345",
+                enrollmentDate = 121212
+            ),
+            onPaymentDone = { _,_, _ -> }
+        )
+    }
+}
 
-            // Floating success badge
-            Surface(
-                shape = RoundedCornerShape(50.dp),
-                color = Color(0xFF4CAF50).copy(alpha = 0.2f)
-            ) {
-                Text(
-                    text = "100% Complete",
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = Color(0xFF4CAF50)
-                )
-            }
+@Preview(name = "Unpaid - Dark", showBackground = true)
+@Composable
+fun UnpaidStudentCardDarkPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        UnpaidStudentCard(
+            student = StudentEntity(
+                id = 1,
+                name = "Priya Singh",
+                phoneNumber = "12345",
+                enrollmentDate = 121212
+            ),
+            onPaymentDone = { _, _, _ -> }
+        )
+    }
+}
+@Preview(
+    name = "Light Mode",
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+    showBackground = true,
+    showSystemUi = true
+)
+@Preview(
+    name = "Dark Mode",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+fun EmptyStatesPreview() {
+    MaterialTheme {
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // Toggle between these to preview individually
+            EmptyPaidState()
+
+            // OR
+            // EmptyUnpaidState(totalStudents = 12)
         }
     }
 }
