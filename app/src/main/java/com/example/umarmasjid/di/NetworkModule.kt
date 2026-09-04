@@ -9,7 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import javax.inject.Singleton
 
 @Module
@@ -26,7 +26,7 @@ abstract class NetworkModule {
         @Provides
         @Singleton
         fun provideHttpClient(): HttpClient {
-            return HttpClientFactory.create(CIO.create())
+            return HttpClientFactory.create(OkHttp.create())
         }
     }
 }
