@@ -5,6 +5,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.time.LocalDate
+import java.util.UUID
 
 @Entity(
     tableName = "payments",
@@ -13,25 +15,36 @@ import androidx.room.PrimaryKey
             entity = StudentEntity::class,
             parentColumns = ["id"],
             childColumns = ["student_id"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.NO_ACTION
         )
     ],
-    indices = [Index("student_id")]
+    indices = [
+        Index(value = ["student_id"])
+    ]
 )
 data class PaymentEntity(
 
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey
+    val id: String = UUID.randomUUID().toString(),
 
     @ColumnInfo(name = "student_id")
-    val studentId: Int,
+    val studentId: String,
 
     @ColumnInfo(name = "payment_date")
-    val paymentDate: Long,
+    val paymentDate: LocalDate,
 
     @ColumnInfo(name = "amount")
     val amount: Double,
 
     @ColumnInfo(name = "note")
-    val note: String? = null
+    val note: String? = null,
+
+    @ColumnInfo(name = "created_at")
+    val createdAt: Long,
+
+    @ColumnInfo(name = "updated_at")
+    val updatedAt: Long,
+
+    @ColumnInfo(name = "deleted_at")
+    val deletedAt: Long? = null
 )
