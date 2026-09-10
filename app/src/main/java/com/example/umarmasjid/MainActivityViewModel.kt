@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.core.data.location.LocationClient
 import com.example.umarmasjid.core.data.preferences.PrayerSettingsPreferences
 import com.example.umarmasjid.core.data.preferences.SystemSettingsPreferences
+import com.example.umarmasjid.domain.repository.AuthRepository
+import com.example.umarmasjid.domain.repository.AuthState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,22 +19,17 @@ import javax.inject.Inject
 class MainActivityViewModel @Inject constructor(
     private val locationClient: LocationClient,
     private val preferences: PrayerSettingsPreferences,
-    private val settings: SystemSettingsPreferences
+    private val settings: SystemSettingsPreferences,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
-//    init {
-//        viewModelScope.launch {
-//            combine(
-//                preferences.isLocationInitialized(),
-//                preferences.settings
-//            ){ isInit, settings ->
-//                isInit to settings
-//            }.collect {
-//                println("Location initialized: ${it.first}")
-//                println("Location initialized: ${it.second}")
-//            }
-//        }
-//    }
+    val authState: StateFlow<AuthState> =
+        authRepository.authState
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = AuthState.LOADING
+            )
 
     val darkMode: StateFlow<Boolean> =
         settings.settings
@@ -58,6 +55,12 @@ class MainActivityViewModel @Inject constructor(
                 preferences.setLocation(location.latitude, location.longitude)
                 preferences.setLocationInitialized(true)
             }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
         }
     }
 }

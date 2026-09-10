@@ -4,21 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-09-07T10:58:29.260229Z">
+        <DropdownSelection timestamp="2026-09-06T10:11:53.095284100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Mohd.Umar\.android\avd\Pixel_4.avd" />
-            </handle>
-          </Target>
-        </DropdownSelection>
-        <DialogSelection />
-      </SelectionState>
-      <SelectionState runConfigName="Light Mode - PreviewUmarMasjidBottomBar">
-        <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-03-17T10:23:37.794569400Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=213df3ef0410" />
+              <DeviceId pluginId="Wireless" identifier="serviceName=adb-R9ZX50D0AJR-UE8J9x" />
             </handle>
           </Target>
         </DropdownSelection>

@@ -19,9 +19,13 @@ class UmarMasjidAppState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun rememberUmarMasjidAppState(
-    navigationState: UmarMasjidNavigationState = rememberUmarMasjidNavigationState()
+    isLoggedIn: Boolean,
+    onLogout: () -> Unit,
+    navigationState: UmarMasjidNavigationState = rememberUmarMasjidNavigationState(isLoggedIn = isLoggedIn)
 ): UmarMasjidAppState {
-    val navigator = remember(navigationState) { UmarMasjidNavigator(navigationState) }
+    val navigator = remember(navigationState, onLogout) { 
+        UmarMasjidNavigator(navigationState, onLogout) 
+    }
     return remember(navigationState, navigator) {
         UmarMasjidAppState(navigationState, navigator)
     }

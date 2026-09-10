@@ -18,7 +18,12 @@ import com.example.umarmasjid.navigation.UmarMasjidNavGraph
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmarMasjidRoot(
-    appState: UmarMasjidAppState = rememberUmarMasjidAppState()
+    isLoggedIn: Boolean,
+    onLogout: () -> Unit,
+    appState: UmarMasjidAppState = rememberUmarMasjidAppState(
+        isLoggedIn = isLoggedIn,
+        onLogout = onLogout
+    )
 ) {
     val showBottomBar = appState.showBottomBar
 

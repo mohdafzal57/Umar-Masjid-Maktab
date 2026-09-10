@@ -23,6 +23,8 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "BASE_URL", "\"https://api.aladhan.com/v1/\"")
+            buildConfigField("String", "SUPABASE_KEY", "\"sb_publishable_xLa1iJM887GmeE6PEsls3g_DzY0GO0m\"")
+            buildConfigField("String", "SUPABASE_URL", "\"https://mtwtkrakouslaisojnpp.supabase.co\"")
         }
 
         release {
@@ -88,4 +90,8 @@ dependencies {
     
     // Ktor
     implementation(libs.bundles.ktor)
+
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.2.0"))
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
 }

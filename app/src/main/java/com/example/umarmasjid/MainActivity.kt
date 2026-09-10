@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.umarmasjid.app.UmarMasjidRoot
+import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
             val isLocationInitialized by viewModel.isLocationInitialized.collectAsStateWithLifecycle()
+            val authState by viewModel.authState.collectAsStateWithLifecycle()
 
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
@@ -63,8 +65,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            UmarMasjidTheme(darkMode) {
-                UmarMasjidRoot()
+            if (authState != AuthState.LOADING) {
+                UmarMasjidTheme(darkMode) {
+                    UmarMasjidRoot(
+                        isLoggedIn = authState == AuthState.AUTHENTICATED,
+                        onLogout = viewModel::logout
+                    )
+                }
             }
         }
     }
