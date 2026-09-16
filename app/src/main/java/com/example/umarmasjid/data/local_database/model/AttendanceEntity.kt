@@ -36,8 +36,8 @@ data class AttendanceEntity(
     @ColumnInfo(name = "attendance_date")
     val attendanceDate: LocalDate,
 
-    @ColumnInfo(name = "present")
-    val isPresent: Boolean,
+    @ColumnInfo(name = "attendance_status")
+    val attendanceStatus: AttendanceStatus,
 
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
@@ -47,9 +47,4 @@ data class AttendanceEntity(
 
     @ColumnInfo(name = "deleted_at")
     val deletedAt: Long? = null
-)
-
-data class DailyAttendanceCount(
-    @ColumnInfo(name = "attendance_date") val date: Long,
-    @ColumnInfo(name = "presentCount") val presentCount: Int
 )

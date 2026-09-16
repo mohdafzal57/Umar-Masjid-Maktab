@@ -46,9 +46,9 @@ fun StudentScreen(
     students: List<StudentEntity>,
     isLoading: Boolean,
     popToHome: () -> Unit,
-    navigateToPayment: (studentId: Int) -> Unit,
+    navigateToPayment: (studentId: String) -> Unit,
     onEvent: (StudentEvent) -> Unit,
-    navigateToAttendanceBarChart: (Int) -> Unit
+    navigateToAttendanceBarChart: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }

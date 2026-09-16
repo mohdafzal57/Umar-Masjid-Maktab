@@ -74,7 +74,7 @@ data class AttendancePoint(
 
 @Immutable
 data class StudentSummary(
-    val id: Int,
+    val id: String,
     val initials: String,
     val name: String,
     val feeStatus: FeeStatus,

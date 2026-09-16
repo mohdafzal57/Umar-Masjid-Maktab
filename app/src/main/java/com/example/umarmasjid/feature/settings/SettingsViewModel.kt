@@ -13,9 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -40,9 +39,9 @@ class SettingsViewModel @Inject constructor(
                 }
 
                 val csvHeader = "ID,Name,Phone,Enrollment Date\n"
-                val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                val dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
                 val csvContent = students.joinToString("\n", prefix = csvHeader) { student ->
-                    "${student.id},${student.name},${student.phoneNumber},${dateFormat.format(Date(student.enrollmentDate))}"
+                    "${student.id},${student.name},${student.phoneNumber},${student.enrollmentDate.format(dateFormatter)}"
                 }
 
                 _uiState.value = SettingsUiState.Success(csvContent, "text/csv", "Students_Records.csv")
@@ -130,7 +129,10 @@ class SettingsViewModel @Inject constructor(
                         StudentEntity(
                             name = contact.name,
                             phoneNumber = contact.phoneNumber,
-                            enrollmentDate = System.currentTimeMillis()
+                            enrollmentDate = LocalDate.now(),
+                            teacherId = "", //Todo: Teacher Id should be fetched from datastore
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis(),
                         )
                     )
                 }

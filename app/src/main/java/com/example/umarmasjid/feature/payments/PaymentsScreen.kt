@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 fun PaymentsScreen(
     popToHome: () -> Unit,
     uiState: PaymentState,
-    onPaymentDone: (Int, Double, String?) -> Unit,
+    onPaymentDone: (studentId: String, amount: Double, note: String?) -> Unit,
 ) {
     val pagerState = rememberPagerState(pageCount = { PaymentStatus.entries.size })
     val coroutineScope = rememberCoroutineScope()
