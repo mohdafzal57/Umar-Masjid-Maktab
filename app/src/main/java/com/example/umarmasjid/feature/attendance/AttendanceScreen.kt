@@ -1,20 +1,23 @@
+
 package com.example.umarmasjid.feature.attendance
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,14 +34,13 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -61,11 +64,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.umarmasjid.data.local_database.model.AttendanceStatus
 import com.example.umarmasjid.data.local_database.model.StudentAttendance
+import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 
 
 @Composable
@@ -79,7 +83,8 @@ fun AttendanceScreen(
 
         AttendanceUiState.Loading -> {
             Box(
-                modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
@@ -141,16 +146,13 @@ fun AttendanceScreen(
                             )
                         }
 
-                        items(items = students, key = { it.studentId }) { studentAttendance ->
+                        items(
+                            items = students,
+                            key = { it.studentId }
+                        ) { studentAttendance ->
                             ModernStudentAttendanceCard(
-                                modifier = Modifier.animateItem(
-                                    fadeInSpec = null, fadeOutSpec = null, placementSpec = spring(
-                                        stiffness = Spring.StiffnessMediumLow,
-                                        visibilityThreshold = IntOffset.VisibilityThreshold
-                                    )
-                                ),
                                 student = studentAttendance,
-                                onToggle = { onEvent( AttendanceAction.MarkAttendance(studentAttendance))}
+                                onStatusChange = { onEvent( AttendanceAction.MarkAttendance(studentAttendance))}
                             )
                         }
                     }
@@ -512,174 +514,6 @@ fun AttendanceListHeader(
 
 
 @Composable
-fun ModernStudentAttendanceCard(
-    modifier: Modifier = Modifier,
-    student: StudentAttendance,
-    onToggle: () -> Unit
-) {
-    val cardColor by animateColorAsState(
-        targetValue = when (student.status) {
-            AttendanceStatus.PRESENT ->
-                MaterialTheme.colorScheme.primaryContainer
-
-            AttendanceStatus.ABSENT ->
-                MaterialTheme.colorScheme.errorContainer
-
-            AttendanceStatus.LATE ->
-                MaterialTheme.colorScheme.tertiaryContainer
-
-            null ->
-                MaterialTheme.colorScheme.surfaceVariant
-        },
-        label = "card_color"
-    )
-
-    val statusColor = when (student.status) {
-        AttendanceStatus.PRESENT ->
-            MaterialTheme.colorScheme.primary
-
-        AttendanceStatus.ABSENT ->
-            MaterialTheme.colorScheme.error
-
-        AttendanceStatus.LATE ->
-            MaterialTheme.colorScheme.tertiary
-
-        null ->
-            MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    val statusText = when (student.status) {
-        AttendanceStatus.PRESENT -> "Present"
-        AttendanceStatus.ABSENT -> "Absent"
-        AttendanceStatus.LATE -> "Late"
-        null -> "Not marked"
-    }
-
-    val statusIcon = when (student.status) {
-        AttendanceStatus.PRESENT ->
-            Icons.Default.CheckCircle
-
-        AttendanceStatus.ABSENT ->
-            Icons.Default.Cancel
-
-        AttendanceStatus.LATE ->
-            Icons.Default.RadioButtonUnchecked
-
-        null ->
-            Icons.Default.RadioButtonUnchecked
-    }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = cardColor
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
-        ),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Surface(
-                shape = CircleShape,
-                color = statusColor,
-                modifier = Modifier.size(56.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Text(
-                        text = student.name
-                            .take(2)
-                            .uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = when (student.status) {
-                            AttendanceStatus.PRESENT ->
-                                MaterialTheme.colorScheme.onPrimary
-
-                            AttendanceStatus.ABSENT ->
-                                MaterialTheme.colorScheme.onError
-
-                            AttendanceStatus.LATE ->
-                                MaterialTheme.colorScheme.onTertiary
-
-                            null ->
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = student.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = statusColor
-                )
-            }
-
-            FilledTonalButton(
-                onClick = onToggle,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = when (student.status) {
-                        AttendanceStatus.PRESENT ->
-                            MaterialTheme.colorScheme.primary
-
-                        AttendanceStatus.ABSENT ->
-                            MaterialTheme.colorScheme.error
-
-                        AttendanceStatus.LATE ->
-                            MaterialTheme.colorScheme.tertiary
-
-                        null ->
-                            MaterialTheme.colorScheme.secondary
-                    },
-                    contentColor = when (student.status) {
-                        AttendanceStatus.PRESENT ->
-                            MaterialTheme.colorScheme.onPrimary
-
-                        AttendanceStatus.ABSENT ->
-                            MaterialTheme.colorScheme.onError
-
-                        AttendanceStatus.LATE ->
-                            MaterialTheme.colorScheme.onTertiary
-
-                        null ->
-                            MaterialTheme.colorScheme.onSecondary
-                    }
-                ),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Icon(
-                    imageVector = statusIcon,
-                    contentDescription = statusText,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun EmptyAttendanceState() {
 
     Card(
@@ -724,5 +558,217 @@ fun EmptyAttendanceState() {
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+// ---------- Palette ----------
+
+private object AttendanceColors {
+    val Present = Color(0xFF2E7D32)   // green
+    val Late    = Color(0xFFF9A825)   // amber
+    val Absent  = Color(0xFFD32F2F)   // red
+}
+
+private fun statusColor(status: AttendanceStatus?): Color = when (status) {
+    AttendanceStatus.PRESENT -> AttendanceColors.Present
+    AttendanceStatus.LATE    -> AttendanceColors.Late
+    AttendanceStatus.ABSENT  -> AttendanceColors.Absent
+    null                     -> Color(0xFF9E9E9E)
+}
+
+private fun statusIcon(status: AttendanceStatus?): ImageVector = when (status) {
+    AttendanceStatus.PRESENT -> Icons.Default.CheckCircle
+    AttendanceStatus.LATE    -> Icons.Default.Schedule
+    AttendanceStatus.ABSENT  -> Icons.Default.Cancel
+    null                     -> Icons.Default.Schedule
+}
+
+private fun statusText(status: AttendanceStatus?): String = when (status) {
+    AttendanceStatus.PRESENT -> "Present"
+    AttendanceStatus.LATE    -> "Late"
+    AttendanceStatus.ABSENT  -> "Absent"
+    null                     -> "Not marked"
+}
+
+// ---------- Card ----------
+
+@Composable
+fun ModernStudentAttendanceCard(
+    modifier: Modifier = Modifier,
+    student: StudentAttendance,
+    onStatusChange: (AttendanceStatus) -> Unit
+) {
+    val accentColor by animateColorAsState(
+        targetValue = statusColor(student.status),
+        label = "accent_color"
+    )
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(4.dp)
+                    .background(accentColor)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = student.name.split(" ")
+                                .mapNotNull { it.firstOrNull() }
+                                .take(2)
+                                .joinToString("")
+                                .uppercase()
+                                .ifEmpty { "?" },
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = student.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = statusText(student.status),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = statusColor(student.status)
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                AttendanceStatusSelector(
+                    modifier = Modifier,
+                    current = student.status,
+                    onSelect = onStatusChange
+                )
+            }
+        }
+    }
+}
+
+// ---------- Standalone 3-button selector ----------
+
+@Composable
+fun AttendanceStatusSelector(
+    modifier: Modifier = Modifier,
+    current: AttendanceStatus?,
+    onSelect: (AttendanceStatus) -> Unit
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AttendanceStatusButton(
+            status = AttendanceStatus.PRESENT,
+            selected = current == AttendanceStatus.PRESENT,
+            onClick = { onSelect(AttendanceStatus.PRESENT) }
+        )
+
+        AttendanceStatusButton(
+            status = AttendanceStatus.LATE,
+            selected = current == AttendanceStatus.LATE,
+            onClick = { onSelect(AttendanceStatus.LATE) }
+        )
+
+        AttendanceStatusButton(
+            status = AttendanceStatus.ABSENT,
+            selected = current == AttendanceStatus.ABSENT,
+            onClick = { onSelect(AttendanceStatus.ABSENT) }
+        )
+    }
+}
+
+@Composable
+private fun AttendanceStatusButton(
+    status: AttendanceStatus,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val color = statusColor(status)
+
+    val backgroundColor by animateColorAsState(
+        targetValue = if (selected) color else Color.Transparent,
+        animationSpec = tween(200),
+        label = "${status.name}_background"
+    )
+
+    val borderColor by animateColorAsState(
+        targetValue = if (selected) color
+        else MaterialTheme.colorScheme.outlineVariant,
+        animationSpec = tween(200),
+        label = "${status.name}_border"
+    )
+
+    val iconColor by animateColorAsState(
+        targetValue = if (selected) Color.White else color,
+        animationSpec = tween(200),
+        label = "${status.name}_icon"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .border(
+                width = 1.dp,
+                color = borderColor,
+                shape = CircleShape
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = statusIcon(status),
+            contentDescription = statusText(status),
+            tint = iconColor,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Preview(
+    name = "Student Attendance Card",
+    showBackground = true,
+    backgroundColor = 0xFF101510
+)
+@Composable
+private fun ModernStudentAttendanceCardPreview() {
+    UmarMasjidTheme() {
+        ModernStudentAttendanceCard(
+            modifier = Modifier.padding(16.dp),
+            student = StudentAttendance(
+                studentId = "1",
+                name = "Mohd Irfan",
+                status = null
+            ),
+            onStatusChange = {}
+        )
     }
 }
