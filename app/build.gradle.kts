@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,6 +7,11 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+val localProperties = Properties()
+localProperties.load(
+    rootProject.file("local.properties").inputStream()
+)
 
 android {
     namespace = "com.example.umarmasjid"
@@ -22,9 +29,23 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"https://api.aladhan.com/v1/\"")
-            buildConfigField("String", "SUPABASE_KEY", "\"sb_publishable_xLa1iJM887GmeE6PEsls3g_DzY0GO0m\"")
-            buildConfigField("String", "SUPABASE_URL", "\"https://mtwtkrakouslaisojnpp.supabase.co\"")
+            buildConfigField(
+                "String",
+                "BASE_URL",
+                "\"${localProperties.getProperty("BASE_URL")}\""
+            )
+
+            buildConfigField(
+                "String",
+                "SUPABASE_URL",
+                "\"${localProperties.getProperty("SUPABASE_URL")}\""
+            )
+
+            buildConfigField(
+                "String",
+                "SUPABASE_KEY",
+                "\"${localProperties.getProperty("SUPABASE_KEY")}\""
+            )
         }
 
         release {
