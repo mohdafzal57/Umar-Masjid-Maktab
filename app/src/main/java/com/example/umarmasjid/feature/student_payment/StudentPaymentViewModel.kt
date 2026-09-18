@@ -15,17 +15,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @HiltViewModel(assistedFactory = StudentPaymentViewModel.Factory::class)
 class StudentPaymentViewModel @AssistedInject constructor(
     private val studentRepository: StudentRepository,
     private val paymentRepository: PaymentRepository,
-    @Assisted val studentId: Int,
+    @Assisted val studentId: String,
 ) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
-        fun create(studentId: Int): StudentPaymentViewModel
+        fun create(studentId: String): StudentPaymentViewModel
     }
 
     private val _uiState = MutableStateFlow(StudentPaymentState())
@@ -58,7 +59,9 @@ class StudentPaymentViewModel @AssistedInject constructor(
                             studentId = event.studentId,
                             amount = event.amount,
                             note = event.note,
-                            paymentDate = System.currentTimeMillis()
+                            paymentDate = LocalDate.now(),
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis()
                         )
                     )
                 }
@@ -66,7 +69,10 @@ class StudentPaymentViewModel @AssistedInject constructor(
 
             is PaymentEvent.DeletePayment -> {
                 viewModelScope.launch {
-                    paymentRepository.deletePayment(event.payment)
+                    paymentRepository.deletePayment(
+                        paymentId = event.payment.id,
+                        timestamp = System.currentTimeMillis()
+                    )
                 }
             }
         }
@@ -80,7 +86,7 @@ data class StudentPaymentState(
 sealed class PaymentEvent {
 
     data class AddPayment(
-        val studentId: Int,
+        val studentId: String,
         val amount: Double,
         val note: String?
     ) : PaymentEvent()

@@ -5,6 +5,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.time.LocalDate
+import java.util.UUID
 
 @Entity(
     tableName = "attendances",
@@ -13,26 +15,36 @@ import androidx.room.PrimaryKey
             entity = StudentEntity::class,
             parentColumns = ["id"],
             childColumns = ["student_id"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.NO_ACTION
         )
     ],
-    indices = [ Index(value = ["student_id", "id"], unique = true) ]
+    indices = [
+        Index(
+            value = ["student_id", "attendance_date"],
+            unique = true
+        )
+    ]
 )
 data class AttendanceEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+
+    @PrimaryKey
+    val id: String = UUID.randomUUID().toString(),
 
     @ColumnInfo(name = "student_id")
-    val studentId: Int,
+    val studentId: String,
 
     @ColumnInfo(name = "attendance_date")
-    val attendanceDate: Long,
+    val attendanceDate: LocalDate,
 
-    @ColumnInfo(name = "present")
-    val isPresent: Boolean,
-)
+    @ColumnInfo(name = "attendance_status")
+    val attendanceStatus: AttendanceStatus,
 
-data class DailyAttendanceCount(
-    @ColumnInfo(name = "attendance_date") val date: Long,
-    @ColumnInfo(name = "presentCount") val presentCount: Int
+    @ColumnInfo(name = "created_at")
+    val createdAt: Long,
+
+    @ColumnInfo(name = "updated_at")
+    val updatedAt: Long,
+
+    @ColumnInfo(name = "deleted_at")
+    val deletedAt: Long? = null
 )

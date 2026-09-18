@@ -51,9 +51,8 @@ import androidx.compose.ui.unit.dp
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import com.example.umarmasjid.data.local_database.model.StudentWithPayment
 import com.example.umarmasjid.feature.student_payment.AddPaymentBottomSheet
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun PaidStudentsPage(students: List<StudentWithPayment>, isLoading: Boolean) {
@@ -76,7 +75,11 @@ fun PaidStudentsPage(students: List<StudentWithPayment>, isLoading: Boolean) {
 fun UnpaidStudentsPage(
     students: List<StudentEntity>,
     isLoading: Boolean,
-    onPaymentDone: (Int, Double, String?) -> Unit,
+    onPaymentDone: (
+        studentId: String,
+        amount: Double,
+        note: String?
+    ) -> Unit,
     totalStudents: Int
 ) {
     if (students.isEmpty() && !isLoading) {
@@ -99,7 +102,7 @@ fun UnpaidStudentsPage(
 
 @Composable
 fun PaidStudentCard(student: StudentWithPayment) {
-    val dateFormat = SimpleDateFormat("dd MMM, yyyy", Locale.getDefault())
+    val dateFormat = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
     val successColor = MaterialTheme.colorScheme.primary
 
@@ -153,7 +156,7 @@ fun PaidStudentCard(student: StudentWithPayment) {
                     Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
-                        text = dateFormat.format(Date(student.paymentDate)),
+                        text = dateFormat.format(student.paymentDate),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -174,7 +177,11 @@ fun PaidStudentCard(student: StudentWithPayment) {
 @Composable
 fun UnpaidStudentCard(
     student: StudentEntity,
-    onPaymentDone: (Int, Double, String?) -> Unit
+    onPaymentDone: (
+        studentId: String,
+        amount: Double,
+        note: String?
+    ) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showAddPaymentSheet by remember { mutableStateOf(false) }
@@ -380,10 +387,13 @@ fun UnpaidStudentCardLightPreview() {
     MaterialTheme(colorScheme = lightColorScheme()) {
         UnpaidStudentCard(
             student = StudentEntity(
-                id = 1,
+                id = "1",
                 name = "Priya Singh",
                 phoneNumber = "12345",
-                enrollmentDate = 121212
+                enrollmentDate = LocalDate.now(),
+                teacherId = "",
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
             ),
             onPaymentDone = { _,_, _ -> }
         )
@@ -396,10 +406,13 @@ fun UnpaidStudentCardDarkPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         UnpaidStudentCard(
             student = StudentEntity(
-                id = 1,
+                id = "1",
                 name = "Priya Singh",
                 phoneNumber = "12345",
-                enrollmentDate = 121212
+                enrollmentDate = LocalDate.now(),
+                teacherId = "",
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
             ),
             onPaymentDone = { _, _, _ -> }
         )

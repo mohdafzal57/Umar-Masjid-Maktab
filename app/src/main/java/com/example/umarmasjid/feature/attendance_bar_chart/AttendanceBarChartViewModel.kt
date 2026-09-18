@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
 import com.example.umarmasjid.repository.AttendanceRepository
-import com.example.umarmasjid.util.currentMonthRange
+import com.example.umarmasjid.util.DateUtils
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -16,13 +16,18 @@ import kotlinx.coroutines.flow.stateIn
 @HiltViewModel(assistedFactory = AttendanceBarChartViewModel.Factory::class)
 class AttendanceBarChartViewModel @AssistedInject constructor(
     private val repository: AttendanceRepository,
-    @Assisted val studentId: Int,
+    @Assisted val studentId: String,
 ) : ViewModel() {
 
-    private val dateRange = currentMonthRange()
+    private val startOfTheMonth = DateUtils.getCurrentMonthRange().first
+    private val startOfNextMonth = DateUtils.getCurrentMonthRange().second
 
     val attendanceState: StateFlow<List<AttendanceEntity>> =
-        repository.getAttendanceForMonth(studentId, dateRange.first, dateRange.second)
+        repository.getAttendanceForMonth(
+            studentId,
+            startOfTheMonth,
+            startOfNextMonth
+        )
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5_000),
@@ -32,7 +37,7 @@ class AttendanceBarChartViewModel @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
-            studentId: Int
+            studentId: String
         ): AttendanceBarChartViewModel
     }
 }

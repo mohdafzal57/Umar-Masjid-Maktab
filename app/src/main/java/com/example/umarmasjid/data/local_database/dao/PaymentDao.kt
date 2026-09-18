@@ -1,7 +1,6 @@
 package com.example.umarmasjid.data.local_database.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -9,6 +8,7 @@ import androidx.room.Update
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentWithPayment
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 @Dao
 interface PaymentDao {
@@ -19,11 +19,10 @@ interface PaymentDao {
     @Update
     suspend fun updatePayment(payment: PaymentEntity)
 
-    @Delete
-    suspend fun deletePayment(payment: PaymentEntity)
+    @Query("UPDATE payments SET deleted_at = :timestamp WHERE id = :paymentId")
+    suspend fun softDeletePayment(paymentId: String, timestamp: Long)
 
-    @Query(
-        """
+    @Query("""
         SELECT 
             s.id AS studentId,
             s.name AS studentName,
@@ -32,41 +31,39 @@ interface PaymentDao {
             p.amount AS amount,
             p.note AS note
         FROM students s
-        INNER JOIN payments p ON s.id = p.student_id
-        WHERE p.payment_date BETWEEN :startOfMonth AND :endOfMonth
-        """
-    )
+        INNER JOIN payments p 
+            ON s.id = p.student_id
+            AND p.payment_date >= :startOfMonth
+            AND p.payment_date < :startOfNextMonth
+            AND p.deleted_at IS NULL
+        WHERE s.deleted_at IS NULL
+    """)
     fun getAllStudentsWithPayment(
-        startOfMonth: Long,
-        endOfMonth: Long
+        startOfMonth: LocalDate,
+        startOfNextMonth: LocalDate
     ): Flow<List<StudentWithPayment>>
 
     @Query(
         """
-        SELECT
-            id,
-            student_id,
-            payment_date,
-            amount,
-            note
-        FROM payments
-        WHERE student_id = :studentId
+        SELECT * FROM payments
+        WHERE student_id = :studentId AND deleted_at IS NULL
         ORDER BY payment_date DESC
         """
     )
     fun getPaymentsTillNowByStudentId(
-        studentId: Int
+        studentId: String
     ): Flow<List<PaymentEntity>>
 
     @Query(
         """
         SELECT SUM(amount)
         FROM payments
-        WHERE payment_date BETWEEN :startOfMonth AND :endOfMonth
-        """
+        WHERE payment_date >= :startOfMonth AND payment_date < :startOfNextMonth
+        AND deleted_at IS NULL
+    """
     )
     fun getMonthlyPaymentTotal(
-        startOfMonth: Long,
-        endOfMonth: Long
+        startOfMonth: LocalDate,
+        startOfNextMonth: LocalDate
     ): Flow<Double?>
 }

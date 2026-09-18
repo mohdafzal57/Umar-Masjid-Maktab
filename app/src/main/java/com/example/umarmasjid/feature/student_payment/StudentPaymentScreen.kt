@@ -70,8 +70,7 @@ import androidx.compose.ui.unit.dp
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 // Payment methods data class
@@ -202,7 +201,8 @@ fun StudentPaymentSummaryCard(
 ) {
     val totalPaid = payments.sumOf { it.amount }
     val lastPaymentDate = payments.maxByOrNull { it.paymentDate }?.paymentDate
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    val dateFormat = DateTimeFormatter.ofPattern("dd MMM yyyy")
+
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
 
     Card(
@@ -280,7 +280,7 @@ fun StudentPaymentSummaryCard(
                 PaymentSummaryItem(
                     title = "Last Payment",
                     value = lastPaymentDate?.let {
-                        dateFormat.format(Date(it))
+                        dateFormat.format(it)
                     } ?: "None",
                     icon = Icons.Default.Schedule
                 )
@@ -411,8 +411,13 @@ fun PaymentHistoryCard(
     payment: PaymentEntity,
     onDelete: () -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+    val dateFormat = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
+    val currencyFormat = NumberFormat.getCurrencyInstance(
+        Locale.Builder()
+            .setLanguage("en")
+            .setRegion("IN")
+            .build()
+    )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -456,7 +461,7 @@ fun PaymentHistoryCard(
                 )
 
                 Text(
-                    text = dateFormat.format(Date(payment.paymentDate)),
+                    text = dateFormat.format(payment.paymentDate),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

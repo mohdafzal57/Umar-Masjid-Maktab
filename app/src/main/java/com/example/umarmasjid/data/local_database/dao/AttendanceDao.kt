@@ -7,8 +7,9 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
 import com.example.umarmasjid.data.local_database.model.DailyAttendanceCount
-import com.example.umarmasjid.data.local_database.model.StudentWithAttendance
+import com.example.umarmasjid.data.local_database.model.StudentAttendance
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 @Dao
 interface AttendanceDao {
@@ -19,66 +20,91 @@ interface AttendanceDao {
     @Update
     suspend fun update(attendance: AttendanceEntity)
 
-    @Query(
-        """
-            SELECT COUNT(*) FROM attendances 
-            WHERE attendance_date BETWEEN :startOfMonth AND :endOfMonth AND present = 1
-        """
-    )
+    @Query("UPDATE attendances SET deleted_at = :timestamp WHERE student_id = :studentId")
+    suspend fun softDeleteAttendance(studentId: String, timestamp: Long)
+
+    @Query("""
+        SELECT COUNT(*) 
+        FROM attendances 
+        WHERE attendance_date >= :date
+          AND attendance_status IN ('PRESENT', 'LATE')
+          AND deleted_at IS NULL
+    """)
     fun getPresentCount(
-        startOfMonth: Long,
-        endOfMonth: Long
+        date: LocalDate,
     ): Flow<Int>
 
-    // For 7-day trend — per day present count
-    @Query(
-        """
-            SELECT attendance_date, COUNT(*) AS presentCount
-            FROM attendances
-            WHERE present = 1 AND attendance_date BETWEEN :start AND :end
-            GROUP BY attendance_date
-        """
-    )
-    fun getDailyPresentCounts(start: Long, end: Long): Flow<List<DailyAttendanceCount>>
-
-    // For total students on a given day (to calculate %)
-    @Query(
-        value = """
-            SELECT COUNT(DISTINCT student_id) FROM attendances
-            WHERE attendance_date BETWEEN :start AND :end
-        """
-    )
-    fun getTotalMarkedStudents(start: Long, end: Long): Flow<Int>
-
-    @Query(
-        """
-            SELECT * FROM attendances 
-            WHERE student_id = :studentId 
-            AND attendance_date BETWEEN :startOfDay AND :endOfDay
-            ORDER BY attendance_date ASC
-        """
-    )
-    fun getAttendanceByStudentId(
-        studentId: Int,
-        startOfDay: Long,
-        endOfDay: Long
-    ): Flow<List<AttendanceEntity>>
-
-    @Query("SELECT * FROM attendances WHERE student_id = :studentId AND attendance_date BETWEEN :startOfDay AND :endOfDay")
-    suspend fun getAttendanceByDateRange(
-        studentId: Int,
-        startOfDay: Long,
-        endOfDay: Long
+    @Query("""
+        SELECT * FROM attendances
+        WHERE student_id = :studentId
+          AND attendance_date = :today
+          AND deleted_at IS NULL
+        LIMIT 1
+    """)
+    suspend fun getAttendanceForToday(
+        studentId: String,
+        today: LocalDate
     ): AttendanceEntity?
 
-    @Query(
-       value = """
-            SELECT s.id AS studentId, s.name AS name, a.present
-            FROM students s
-            LEFT JOIN attendances a 
-            ON s.id = a.student_id AND a.attendance_date = :date
-        """
-    )
-    fun getStudentsWithAttendance(date: Long): Flow<List<StudentWithAttendance>>
-}
+    // For 7-day trend — per day present count
+//    Sep 10 → 2 present
+//    Sep 11 → 2 present
+//    Sep 12 → 5 present
+    //Todo: i need to work on this output.
+    @Query("""
+        SELECT attendance_date, COUNT(*) AS presentCount
+        FROM attendances
+        WHERE attendance_status IN ('PRESENT', 'LATE')
+          AND attendance_date >= :start
+          AND attendance_date < :endExclusive
+          AND deleted_at IS NULL
+        GROUP BY attendance_date
+        ORDER BY attendance_date
+    """)
+    fun getDailyPresentCounts(
+        start: LocalDate,
+        endExclusive: LocalDate
+    ): Flow<List<DailyAttendanceCount>>
 
+    @Query("""
+    SELECT COUNT(DISTINCT student_id)
+    FROM attendances
+    WHERE attendance_date >= :start AND attendance_date < :endExclusive
+    AND deleted_at IS NULL
+    """)
+    fun getTotalMarkedStudents(
+        start: LocalDate,
+        endExclusive: LocalDate
+    ): Flow<Int>
+
+    // It will return all attendance for the given month.
+    @Query("""
+    SELECT * FROM attendances
+    WHERE student_id = :studentId
+      AND attendance_date >= :startDate
+      AND attendance_date < :endDateExclusive
+      AND deleted_at IS NULL
+    """)
+    fun getAttendanceForMonth(
+        studentId: String,
+        startDate: LocalDate,
+        endDateExclusive: LocalDate
+    ): Flow<List<AttendanceEntity>>
+
+    // It gives all student list with their attendance status for the given date.
+    @Query("""
+    SELECT 
+        s.id AS studentId,
+        s.name AS name,
+        a.attendance_status AS status
+    FROM students s
+    LEFT JOIN attendances a
+        ON s.id = a.student_id
+        AND a.attendance_date = :date
+        AND a.deleted_at IS NULL
+    WHERE s.deleted_at IS NULL
+    """)
+    fun getStudentsWithAttendance(
+        date: LocalDate
+    ): Flow<List<StudentAttendance>>
+}

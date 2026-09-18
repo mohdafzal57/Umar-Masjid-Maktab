@@ -2,53 +2,54 @@ package com.example.umarmasjid.repository
 
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
-import com.example.umarmasjid.data.local_database.model.StudentWithAttendance
-import com.example.umarmasjid.util.todayRange
+import com.example.umarmasjid.data.local_database.model.StudentAttendance
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
-
 
 @Singleton
 class AttendanceRepository @Inject constructor(
     private val attendanceDao: AttendanceDao
 ) {
 
-    suspend fun markAttendance(
-        studentId: Int,
-        date: Long,
-        status: Boolean
-    ) {
-        attendanceDao.getAttendanceByDateRange(
-            studentId = studentId,
-            startOfDay = todayRange().first,
-            endOfDay = todayRange().second
+    fun getStudentsWithAttendance(date: LocalDate): Flow<List<StudentAttendance>> {
+        return attendanceDao.getStudentsWithAttendance(date)
+    }
+
+    suspend fun markAttendance(studentAttendance: StudentAttendance) {
+        val today = LocalDate.now()
+        attendanceDao.getAttendanceForToday(
+            studentId = studentAttendance.studentId,
+            today = today
         )?.let { existing ->
             attendanceDao.update(
                 existing.copy(
-                    attendanceDate = date,
-                    isPresent = status
+                    attendanceDate = today,
+                    attendanceStatus = studentAttendance.status!!,
+                    updatedAt = System.currentTimeMillis(),
                 )
             )
         } ?: attendanceDao.insert(
             AttendanceEntity(
-                studentId = studentId,
-                attendanceDate = date,
-                isPresent = status
+                studentId = studentAttendance.studentId,
+                attendanceDate = today,
+                attendanceStatus = studentAttendance.status!!,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
             )
         )
     }
 
-    fun getStudentsWithAttendance(date: Long): Flow<List<StudentWithAttendance>> {
-        return attendanceDao.getStudentsWithAttendance(date)
-    }
-
-    fun getAttendanceForMonth(studentId: Int, startOfDay: Long, endOfDay: Long):
-            Flow<List<AttendanceEntity>> {
-        return attendanceDao.getAttendanceByStudentId(
+    fun getAttendanceForMonth(
+        studentId: String,
+        startOfMonth: LocalDate,
+        startOfNextMonth: LocalDate
+    ): Flow<List<AttendanceEntity>> {
+        return attendanceDao.getAttendanceForMonth(
             studentId = studentId,
-            startOfDay = startOfDay,
-            endOfDay = endOfDay
+            startDate = startOfMonth,
+            endDateExclusive = startOfNextMonth
         )
     }
 }

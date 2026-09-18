@@ -6,7 +6,7 @@ import com.example.umarmasjid.data.local_database.dao.StudentDao
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import com.example.umarmasjid.feature.home.AttendancePeriod
 import com.example.umarmasjid.feature.home.AttendancePoint
-import com.example.umarmasjid.util.todayRange
+import com.example.umarmasjid.util.DateUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -24,6 +24,10 @@ class HomeDashboardRepository @Inject constructor(
     private val attendanceDao: AttendanceDao,
     private val paymentDao: PaymentDao
 ) {
+
+    private val startOfTheMonth = DateUtils.getCurrentMonthRange().first
+    private val startOfNextMonth = DateUtils.getCurrentMonthRange().second
+
     fun getTotalStudents(): Flow<Int> {
         return studentDao.getStudentCount()
     }
@@ -32,13 +36,11 @@ class HomeDashboardRepository @Inject constructor(
         studentDao.getRecentStudents(limit = 5)
 
     fun getStudentsWithPendingFees(): Flow<List<StudentEntity>> {
-        val (start, end) = currentMonthRange()
-        return studentDao.getStudentsWhoNotPaid(start, end)
+        return studentDao.getStudentsWhoNotPaid(startOfTheMonth, startOfNextMonth)
     }
 
     fun getTodayAttendance(): Flow<Int> {
-        val (start, end) = todayRange()
-        return attendanceDao.getPresentCount(start, end)
+        return attendanceDao.getPresentCount(LocalDate.now())
     }
 
     fun getAttendanceTrend(period: AttendancePeriod): Flow<List<AttendancePoint>> {
@@ -46,7 +48,7 @@ class HomeDashboardRepository @Inject constructor(
         return combine(
             ranges.map { (label, start, end) ->
                 combine(
-                    attendanceDao.getDailyPresentCounts(start, end),
+                    attendanceDao.getDailyPresentCounts(startOfTheMonth, startOfNextMonth),
                     studentDao.getStudentCount()
                 ) { dailyCounts, totalStudents ->
                     val present = dailyCounts.sumOf { it.presentCount }
@@ -60,20 +62,7 @@ class HomeDashboardRepository @Inject constructor(
     }
 
     fun getMonthlyFeesCollected(): Flow<Double> {
-        val (start, end) = currentMonthRange()
-        return paymentDao.getMonthlyPaymentTotal(start, end).map { it ?: 0.0 }
-    }
-
-    private fun currentMonthRange(): Pair<Long, Long> {
-        val now = LocalDate.now()
-        val start = now.withDayOfMonth(1)
-            .atStartOfDay(ZoneId.systemDefault())
-            .toInstant().toEpochMilli()
-        val end = now.withDayOfMonth(now.lengthOfMonth())
-            .atTime(23, 59, 59)
-            .atZone(ZoneId.systemDefault())
-            .toInstant().toEpochMilli()
-        return start to end
+        return paymentDao.getMonthlyPaymentTotal(startOfTheMonth, startOfNextMonth).map { it ?: 0.0 }
     }
 
     private data class PeriodRange(val label: String, val start: Long, val end: Long)

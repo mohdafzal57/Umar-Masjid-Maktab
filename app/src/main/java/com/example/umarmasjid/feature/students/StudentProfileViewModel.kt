@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 data class StudentProfileState(
@@ -46,7 +47,10 @@ class StudentProfileViewModel @Inject constructor(
                         StudentEntity(
                             name = event.name,
                             phoneNumber = event.phoneNumber,
-                            enrollmentDate = System.currentTimeMillis()
+                            enrollmentDate = LocalDate.now(),
+                            teacherId = "", // Todo: Set teacher id should be fetched from the datastore.
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis(),
                         )
                     )
                 }
@@ -63,7 +67,7 @@ class StudentProfileViewModel @Inject constructor(
             }
             is StudentEvent.DeleteStudent -> {
                 viewModelScope.launch {
-                    studentRepository.deleteStudent(event.student)
+                    studentRepository.deleteStudent(event.student.id, System.currentTimeMillis())
                 }
             }
         }

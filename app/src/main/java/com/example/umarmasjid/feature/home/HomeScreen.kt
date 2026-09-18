@@ -278,7 +278,7 @@ fun StatsGrid(
 private fun RecentStudentsSection(
     students: List<StudentSummary>,
     onViewAll: () -> Unit,
-    onStudentClick: (Int) -> Unit,
+    onStudentClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(

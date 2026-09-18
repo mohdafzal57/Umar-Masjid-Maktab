@@ -34,7 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDate
 import java.util.Locale
 
 @Preview
@@ -45,7 +45,10 @@ private fun EnrolledPreview() {
         student = StudentEntity(
             name = "Md Afzal",
             phoneNumber = "12345",
-            enrollmentDate = 12
+            enrollmentDate = LocalDate.now(),
+            teacherId = "",
+            createdAt = 12312,
+            updatedAt = 234234,
         ),
         onEdit = {},
         onDelete = {},
@@ -149,7 +152,7 @@ fun EnrolledStudent(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Enrolled: ${dateFormat.format(Date(student.enrollmentDate))}",
+                        text = "Enrolled: ${dateFormat.format(student.enrollmentDate)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

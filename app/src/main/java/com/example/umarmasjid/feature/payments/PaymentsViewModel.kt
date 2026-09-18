@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,8 +24,11 @@ class PaymentsViewModel @Inject constructor(
     private val _studentsWithPaymentStatus = MutableStateFlow(PaymentState())
     val studentsWithPaymentStatus = _studentsWithPaymentStatus.asStateFlow()
 
-    private val start = DateUtils.getStartOfMonthMillis()
-    private val end = DateUtils.getEndOfMonthMillis()
+    /*private val start = DateUtils.getStartOfMonthMillis()
+    private val end = DateUtils.getEndOfMonthMillis()*/
+
+    private val startOfTheMonth = DateUtils.getCurrentMonthRange().first
+    private val startOfNextMonth = DateUtils.getCurrentMonthRange().second
 
     init {
         loadData()
@@ -35,8 +39,8 @@ class PaymentsViewModel @Inject constructor(
             _studentsWithPaymentStatus.update { it.copy(isLoading = true) }
 
             combine(
-                paymentRepository.getAllStudentsWithPaymentWithinMonth(start, end),
-                studentRepository.getStudentsWhoNotPaid(start, end)
+                paymentRepository.getAllStudentsWithPaymentWithinMonth(startOfTheMonth, startOfNextMonth),
+                studentRepository.getStudentsWhoNotPaid(startOfTheMonth, startOfNextMonth)
             ) { paid, unpaid ->
                 paid to unpaid
             }.collect { (paidStudents, unpaidStudents) ->
@@ -52,7 +56,7 @@ class PaymentsViewModel @Inject constructor(
     }
 
     fun insertPayment(
-        studentId: Int,
+        studentId: String,
         amount: Double,
         note: String?
     ) {
@@ -60,9 +64,11 @@ class PaymentsViewModel @Inject constructor(
             paymentRepository.insertPayment(
                 PaymentEntity(
                     studentId = studentId,
-                    paymentDate = System.currentTimeMillis(),
+                    paymentDate = LocalDate.now(),
                     amount = amount,
-                    note = note
+                    note = note,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
                 )
             )
         }

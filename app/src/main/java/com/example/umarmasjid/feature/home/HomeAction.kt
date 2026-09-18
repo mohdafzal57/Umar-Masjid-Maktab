@@ -7,5 +7,5 @@ sealed interface HomeAction {
     data object NavigateToAttendance : HomeAction
     data object NavigateToStudents : HomeAction
     data object NavigateToFees : HomeAction
-    data class NavigateToStudent(val studentId: Int) : HomeAction
+    data class NavigateToStudent(val studentId: String) : HomeAction
 }

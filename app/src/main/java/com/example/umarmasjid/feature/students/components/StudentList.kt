@@ -82,8 +82,8 @@ fun StudentsList(
     students: List<StudentEntity>,
     onEdit: (StudentEntity) -> Unit,
     onDelete: (StudentEntity) -> Unit,
-    navigateToPayment: (Int) -> Unit,
-    navigateToAttendance: (Int) -> Unit,
+    navigateToPayment: (studentId: String) -> Unit,
+    navigateToAttendance: (String) -> Unit,
     searchQuery: String
 ) {
     val context = LocalContext.current
