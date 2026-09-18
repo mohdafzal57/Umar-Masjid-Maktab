@@ -41,7 +41,6 @@ class AttendanceRepository @Inject constructor(
         )
     }
 
-    // weekly // monthly // yearly
     fun getAttendanceForMonth(
         studentId: String,
         startOfMonth: LocalDate,

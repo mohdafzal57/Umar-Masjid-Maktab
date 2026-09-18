@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import kotlinx.coroutines.flow.Flow
@@ -16,9 +17,6 @@ interface StudentDao {
 
     @Update
     suspend fun updateStudent(student: StudentEntity)
-
-    @Query("UPDATE students SET deleted_at = :timestamp WHERE id = :studentId")
-    suspend fun softDeleteStudent(studentId: String, timestamp: Long)
 
     @Query("SELECT * FROM students WHERE deleted_at IS NULL ORDER BY name ASC")
     fun getAllStudents(): Flow<List<StudentEntity>>
@@ -34,6 +32,22 @@ interface StudentDao {
 
     @Query("SELECT * FROM students WHERE deleted_at IS NULL ORDER BY enrollment_date DESC LIMIT :limit")
     fun getRecentStudents(limit: Int = 5): Flow<List<StudentEntity>>
+
+    @Query("UPDATE students SET deleted_at = :timestamp WHERE id = :studentId")
+    suspend fun softDeleteStudentInternal(studentId: String, timestamp: Long)
+
+    @Query("UPDATE attendances SET deleted_at = :timestamp WHERE student_id = :studentId")
+    suspend fun softDeleteAttendanceInternal(studentId: String, timestamp: Long)
+
+    @Query("UPDATE payments SET deleted_at = :timestamp WHERE student_id = :studentId")
+    suspend fun softDeletePaymentsInternal(studentId: String, timestamp: Long)
+
+    @Transaction
+    suspend fun deleteStudent(studentId: String, timestamp: Long) {
+        softDeleteStudentInternal(studentId, timestamp)
+        softDeleteAttendanceInternal(studentId, timestamp)
+        softDeletePaymentsInternal(studentId, timestamp)
+    }
 
     // This query is a little complex to understand because of deleted_at property.
     // Students who have NOT paid in current month

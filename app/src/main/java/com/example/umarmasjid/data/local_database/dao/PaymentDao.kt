@@ -35,7 +35,9 @@ interface PaymentDao {
             ON s.id = p.student_id
             AND p.payment_date >= :startOfMonth
             AND p.payment_date < :startOfNextMonth
-        """)
+            AND p.deleted_at IS NULL
+        WHERE s.deleted_at IS NULL
+    """)
     fun getAllStudentsWithPayment(
         startOfMonth: LocalDate,
         startOfNextMonth: LocalDate
@@ -44,7 +46,7 @@ interface PaymentDao {
     @Query(
         """
         SELECT * FROM payments
-        WHERE student_id = :studentId
+        WHERE student_id = :studentId AND deleted_at IS NULL
         ORDER BY payment_date DESC
         """
     )
@@ -54,10 +56,10 @@ interface PaymentDao {
 
     @Query(
         """
-    SELECT SUM(amount)
-    FROM payments
-    WHERE payment_date >= :startOfMonth
-      AND payment_date < :startOfNextMonth
+        SELECT SUM(amount)
+        FROM payments
+        WHERE payment_date >= :startOfMonth AND payment_date < :startOfNextMonth
+        AND deleted_at IS NULL
     """
     )
     fun getMonthlyPaymentTotal(

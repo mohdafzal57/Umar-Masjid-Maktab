@@ -69,7 +69,10 @@ class StudentPaymentViewModel @AssistedInject constructor(
 
             is PaymentEvent.DeletePayment -> {
                 viewModelScope.launch {
-                    paymentRepository.deletePayment(studentId, System.currentTimeMillis())
+                    paymentRepository.deletePayment(
+                        paymentId = event.payment.id,
+                        timestamp = System.currentTimeMillis()
+                    )
                 }
             }
         }

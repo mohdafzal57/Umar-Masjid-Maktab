@@ -20,15 +20,16 @@ interface AttendanceDao {
     @Update
     suspend fun update(attendance: AttendanceEntity)
 
-    @Query(
-        """
-            SELECT COUNT(*) 
-            FROM attendances 
-            WHERE attendance_date >= :date
-            AND attendance_status = 'PRESENT'
-            AND deleted_at IS NULL
-        """
-    )
+    @Query("UPDATE attendances SET deleted_at = :timestamp WHERE student_id = :studentId")
+    suspend fun softDeleteAttendance(studentId: String, timestamp: Long)
+
+    @Query("""
+        SELECT COUNT(*) 
+        FROM attendances 
+        WHERE attendance_date >= :date
+          AND attendance_status IN ('PRESENT', 'LATE')
+          AND deleted_at IS NULL
+    """)
     fun getPresentCount(
         date: LocalDate,
     ): Flow<Int>
@@ -53,7 +54,7 @@ interface AttendanceDao {
     @Query("""
         SELECT attendance_date, COUNT(*) AS presentCount
         FROM attendances
-        WHERE attendance_status = 'PRESENT'
+        WHERE attendance_status IN ('PRESENT', 'LATE')
           AND attendance_date >= :start
           AND attendance_date < :endExclusive
           AND deleted_at IS NULL
@@ -76,6 +77,7 @@ interface AttendanceDao {
         endExclusive: LocalDate
     ): Flow<Int>
 
+    // It will return all attendance for the given month.
     @Query("""
     SELECT * FROM attendances
     WHERE student_id = :studentId
@@ -89,8 +91,8 @@ interface AttendanceDao {
         endDateExclusive: LocalDate
     ): Flow<List<AttendanceEntity>>
 
-    @Query(
-        """
+    // It gives all student list with their attendance status for the given date.
+    @Query("""
     SELECT 
         s.id AS studentId,
         s.name AS name,
@@ -100,8 +102,8 @@ interface AttendanceDao {
         ON s.id = a.student_id
         AND a.attendance_date = :date
         AND a.deleted_at IS NULL
-    """
-    )
+    WHERE s.deleted_at IS NULL
+    """)
     fun getStudentsWithAttendance(
         date: LocalDate
     ): Flow<List<StudentAttendance>>

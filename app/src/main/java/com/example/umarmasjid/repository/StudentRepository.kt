@@ -8,22 +8,38 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class StudentRepository @Inject constructor(private val studentDao: StudentDao) {
-    fun getAllStudents(): Flow<List<StudentEntity>> = studentDao.getAllStudents()
-    suspend fun addStudent(student: StudentEntity) = studentDao.insertStudent(student)
-    suspend fun updateStudent(student: StudentEntity) = studentDao.updateStudent(student)
-    suspend fun deleteStudent(studentId: String, timestamp: Long) = studentDao.softDeleteStudent(studentId, timestamp)
+class StudentRepository @Inject constructor(
+    private val studentDao: StudentDao
+) {
 
-    fun getStudentById(studentId: String) : Flow<StudentEntity> {
-        return studentDao.getStudentById(studentId)
+    fun getAllStudents(): Flow<List<StudentEntity>> =
+        studentDao.getAllStudents()
+
+    suspend fun addStudent(student: StudentEntity) =
+        studentDao.insertStudent(student)
+
+    suspend fun updateStudent(student: StudentEntity) =
+        studentDao.updateStudent(student)
+
+    suspend fun deleteStudent(
+        studentId: String,
+        timestamp: Long
+    ) {
+        studentDao.deleteStudent(studentId, timestamp)
     }
+
+    fun getStudentById(studentId: String): Flow<StudentEntity> =
+        studentDao.getStudentById(studentId)
 
     fun getStudentsWhoNotPaid(
         startOfMonth: LocalDate,
         startOfNextMonth: LocalDate
     ): Flow<List<StudentEntity>> =
-        studentDao.getStudentsWhoNotPaid(startOfMonth, startOfNextMonth)
+        studentDao.getStudentsWhoNotPaid(
+            startOfMonth,
+            startOfNextMonth
+        )
 
-    fun searchStudents(query: String): Flow<List<StudentEntity>> = studentDao.searchStudents(query)
-
+    fun searchStudents(query: String): Flow<List<StudentEntity>> =
+        studentDao.searchStudents(query)
 }
