@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@Singleton
+/*@Singleton
 class WorkManagerSyncManager @Inject constructor(
     private val workManager: WorkManager
 ) : SyncManager {
@@ -47,9 +47,8 @@ class WorkManagerSyncManager @Inject constructor(
             syncRequest
         )
     }
-}
+}*/
 
-/*
 @Singleton
 class DebouncedSyncManager @Inject constructor(
     private val workManager: WorkManager,
@@ -88,4 +87,4 @@ class DebouncedSyncManager @Inject constructor(
             syncRequest
         )
     }
-}*/
+}
