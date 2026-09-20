@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.AttendanceStatus
 import com.example.umarmasjid.data.local_database.model.StudentAttendance
-import com.example.umarmasjid.repository.AttendanceRepository
+import com.example.umarmasjid.repository.OfflineAttendanceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,10 +16,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AttendanceViewModel @Inject constructor(
-    private val attendanceRepository: AttendanceRepository
+    private val offlineAttendanceRepository: OfflineAttendanceRepository
 ) : ViewModel() {
 
-    val uiState: StateFlow<AttendanceUiState> = attendanceRepository
+    val uiState: StateFlow<AttendanceUiState> = offlineAttendanceRepository
         .getStudentsWithAttendance(LocalDate.now())
         .map {
             println("students: $it")
@@ -46,7 +46,7 @@ class AttendanceViewModel @Inject constructor(
                 AttendanceStatus.LATE -> AttendanceStatus.PRESENT
                 null -> AttendanceStatus.PRESENT
             }
-            attendanceRepository.markAttendance(studentAttendance.copy(status = newStatus))
+            offlineAttendanceRepository.markAttendance(studentAttendance.copy(status = newStatus))
         }
     }
 }

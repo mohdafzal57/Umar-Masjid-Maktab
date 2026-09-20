@@ -2,10 +2,8 @@ package com.example.umarmasjid.feature.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.umarmasjid.data.repository.SupabaseAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +23,7 @@ data class SignUpUiState(
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val supabase: SupabaseClient
+    private val supabaseAuthRepository: SupabaseAuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -56,14 +54,9 @@ class SignUpViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             try {
-                // Direct Supabase call
-                supabase.auth.signUpWith(Email) {
-                    email = currentState.email.trim()
-                    password = currentState.password
-                }
+                supabaseAuthRepository.signUp(currentState.email, currentState.password)
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (e: Exception) {
-                // Handle Supabase/Network exceptions
                 _uiState.update {
                     it.copy(
                         isLoading = false,

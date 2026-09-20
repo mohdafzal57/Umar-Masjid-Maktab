@@ -3,8 +3,8 @@ package com.example.umarmasjid.feature.payments
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
-import com.example.umarmasjid.repository.PaymentRepository
-import com.example.umarmasjid.repository.StudentRepository
+import com.example.umarmasjid.repository.OfflinePaymentRepository
+import com.example.umarmasjid.repository.OfflineStudentRepository
 import com.example.umarmasjid.util.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PaymentsViewModel @Inject constructor(
-    private val studentRepository: StudentRepository,
-    private val paymentRepository: PaymentRepository
+    private val offlineStudentRepository: OfflineStudentRepository,
+    private val offlinePaymentRepository: OfflinePaymentRepository
 ) : ViewModel() {
 
     private val _studentsWithPaymentStatus = MutableStateFlow(PaymentState())
@@ -39,8 +39,8 @@ class PaymentsViewModel @Inject constructor(
             _studentsWithPaymentStatus.update { it.copy(isLoading = true) }
 
             combine(
-                paymentRepository.getAllStudentsWithPaymentWithinMonth(startOfTheMonth, startOfNextMonth),
-                studentRepository.getStudentsWhoNotPaid(startOfTheMonth, startOfNextMonth)
+                offlinePaymentRepository.getAllStudentsWithPaymentWithinMonth(startOfTheMonth, startOfNextMonth),
+                offlineStudentRepository.getStudentsWhoNotPaid(startOfTheMonth, startOfNextMonth)
             ) { paid, unpaid ->
                 paid to unpaid
             }.collect { (paidStudents, unpaidStudents) ->
@@ -61,7 +61,7 @@ class PaymentsViewModel @Inject constructor(
         note: String?
     ) {
         viewModelScope.launch {
-            paymentRepository.insertPayment(
+            offlinePaymentRepository.insertPayment(
                 PaymentEntity(
                     studentId = studentId,
                     paymentDate = LocalDate.now(),

@@ -115,4 +115,9 @@ dependencies {
     implementation(platform("io.github.jan-tennert.supabase:bom:3.2.0"))
     implementation("io.github.jan-tennert.supabase:auth-kt")
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
+
+    // Worker
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation("androidx.hilt:hilt-work:1.4.0")
+    ksp(libs.androidx.hilt.compiler)
 }

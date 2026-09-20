@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
-import com.example.umarmasjid.repository.PaymentRepository
-import com.example.umarmasjid.repository.StudentRepository
+import com.example.umarmasjid.repository.OfflinePaymentRepository
+import com.example.umarmasjid.repository.OfflineStudentRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -19,8 +19,8 @@ import java.time.LocalDate
 
 @HiltViewModel(assistedFactory = StudentPaymentViewModel.Factory::class)
 class StudentPaymentViewModel @AssistedInject constructor(
-    private val studentRepository: StudentRepository,
-    private val paymentRepository: PaymentRepository,
+    private val offlineStudentRepository: OfflineStudentRepository,
+    private val offlinePaymentRepository: OfflinePaymentRepository,
     @Assisted val studentId: String,
 ) : ViewModel() {
 
@@ -35,8 +35,8 @@ class StudentPaymentViewModel @AssistedInject constructor(
     init {
         viewModelScope.launch {
             combine(
-                studentRepository.getStudentById(studentId),
-                paymentRepository.getPaymentsTillNowByStudentId(studentId)
+                offlineStudentRepository.getStudentById(studentId),
+                offlinePaymentRepository.getPaymentsTillNowByStudentId(studentId)
             ) { student, payments ->
                 student to payments
             }.collect { (student, payments) ->
@@ -54,7 +54,7 @@ class StudentPaymentViewModel @AssistedInject constructor(
         when (event) {
             is PaymentEvent.AddPayment -> {
                 viewModelScope.launch {
-                    paymentRepository.insertPayment(
+                    offlinePaymentRepository.insertPayment(
                         PaymentEntity(
                             studentId = event.studentId,
                             amount = event.amount,
@@ -69,7 +69,7 @@ class StudentPaymentViewModel @AssistedInject constructor(
 
             is PaymentEvent.DeletePayment -> {
                 viewModelScope.launch {
-                    paymentRepository.deletePayment(
+                    offlinePaymentRepository.deletePayment(
                         paymentId = event.payment.id,
                         timestamp = System.currentTimeMillis()
                     )

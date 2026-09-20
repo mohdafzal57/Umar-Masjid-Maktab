@@ -3,13 +3,12 @@ package com.example.umarmasjid.feature.students
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.StudentEntity
-import com.example.umarmasjid.repository.StudentRepository
+import com.example.umarmasjid.repository.OfflineStudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 data class StudentProfileState(
@@ -22,7 +21,7 @@ data class StudentProfileState(
 
 @HiltViewModel
 class StudentProfileViewModel @Inject constructor(
-    private val studentRepository: StudentRepository,
+    private val offlineStudentRepository: OfflineStudentRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StudentProfileState())
@@ -31,7 +30,7 @@ class StudentProfileViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            studentRepository.getAllStudents()
+            offlineStudentRepository.getAllStudents()
                 .collect { students ->
                     _uiState.update { it.copy(students = students, isLoading = false) }
                 }
@@ -43,31 +42,21 @@ class StudentProfileViewModel @Inject constructor(
             is StudentEvent.AddStudent -> {
                 if (event.name.isBlank() || event.phoneNumber.isBlank()) return
                 viewModelScope.launch {
-                    studentRepository.addStudent(
-                        StudentEntity(
-                            name = event.name,
-                            phoneNumber = event.phoneNumber,
-                            enrollmentDate = LocalDate.now(),
-                            teacherId = "", // Todo: Set teacher id should be fetched from the datastore.
-                            createdAt = System.currentTimeMillis(),
-                            updatedAt = System.currentTimeMillis(),
-                        )
-                    )
+                    offlineStudentRepository.addStudent(event.name, event.phoneNumber)
                 }
             }
             is StudentEvent.UpdateStudent -> {
                 viewModelScope.launch {
-                    studentRepository.updateStudent(
-                        student = event.student.copy(
-                            name = event.name,
-                            phoneNumber = event.phoneNumber
-                        )
+                    offlineStudentRepository.updateStudent(
+                        name = event.name,
+                        phoneNumber = event.phoneNumber,
+                        student = event.student
                     )
                 }
             }
             is StudentEvent.DeleteStudent -> {
                 viewModelScope.launch {
-                    studentRepository.deleteStudent(event.student.id, System.currentTimeMillis())
+                    offlineStudentRepository.deleteStudent(event.student.id, System.currentTimeMillis())
                 }
             }
         }

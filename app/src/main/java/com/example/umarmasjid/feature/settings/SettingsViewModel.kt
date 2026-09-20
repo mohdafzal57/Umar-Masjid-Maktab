@@ -4,8 +4,7 @@ import android.content.Context
 import android.provider.ContactsContract
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.umarmasjid.data.local_database.model.StudentEntity
-import com.example.umarmasjid.repository.StudentRepository
+import com.example.umarmasjid.repository.OfflineStudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,13 +12,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val studentRepository: StudentRepository
+    private val offlineStudentRepository: OfflineStudentRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Idle)
@@ -32,7 +30,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = SettingsUiState.Loading
             try {
-                val students = studentRepository.getAllStudents().first()
+                val students = offlineStudentRepository.getAllStudents().first()
                 if (students.isEmpty()) {
                     _uiState.value = SettingsUiState.Error("No student records found.")
                     return@launch
@@ -55,7 +53,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = SettingsUiState.Loading
             try {
-                val students = studentRepository.getAllStudents().first()
+                val students = offlineStudentRepository.getAllStudents().first()
                 if (students.isEmpty()) {
                     _uiState.value = SettingsUiState.Error("No student records found.")
                     return@launch
@@ -125,15 +123,9 @@ class SettingsViewModel @Inject constructor(
             _importState.value = ImportUiState.Loading
             try {
                 selectedContacts.forEach { contact ->
-                    studentRepository.addStudent(
-                        StudentEntity(
-                            name = contact.name,
-                            phoneNumber = contact.phoneNumber,
-                            enrollmentDate = LocalDate.now(),
-                            teacherId = "", //Todo: Teacher Id should be fetched from datastore
-                            createdAt = System.currentTimeMillis(),
-                            updatedAt = System.currentTimeMillis(),
-                        )
+                    offlineStudentRepository.addStudent(
+                        name = contact.name,
+                        phoneNumber = contact.phoneNumber,
                     )
                 }
                 _importState.value = ImportUiState.Success("${selectedContacts.size} students imported.")

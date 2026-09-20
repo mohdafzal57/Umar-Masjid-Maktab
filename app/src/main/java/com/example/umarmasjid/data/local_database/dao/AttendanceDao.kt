@@ -20,6 +20,9 @@ interface AttendanceDao {
     @Update
     suspend fun update(attendance: AttendanceEntity)
 
+    @Query("SELECT * FROM attendances WHERE id = :attendanceId LIMIT 1")
+    suspend fun getAttendanceById(attendanceId: String): AttendanceEntity?
+
     @Query("UPDATE attendances SET deleted_at = :timestamp WHERE student_id = :studentId")
     suspend fun softDeleteAttendance(studentId: String, timestamp: Long)
 

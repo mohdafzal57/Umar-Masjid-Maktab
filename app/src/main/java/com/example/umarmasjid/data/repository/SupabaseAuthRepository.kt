@@ -4,6 +4,7 @@ import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -15,6 +16,10 @@ class SupabaseAuthRepository @Inject constructor(
     private val supabase: SupabaseClient
 ) : AuthRepository {
 
+    override val teacherId: String
+        get() = supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("User not logged in")
+
     override val authState: Flow<AuthState> = supabase.auth.sessionStatus
         .map { status ->
             when (status) {
@@ -24,6 +29,20 @@ class SupabaseAuthRepository @Inject constructor(
                 else -> AuthState.UNAUTHENTICATED
             }
         }
+
+    override suspend fun login(email: String, password: String) {
+        supabase.auth.signInWith(Email) {
+            this.email = email
+            this.password = password
+        }
+    }
+
+    override suspend fun signUp(email: String, password: String) {
+        supabase.auth.signUpWith(Email) {
+            this.email = email
+            this.password = password
+        }
+    }
 
     override suspend fun logout() {
         supabase.auth.signOut()

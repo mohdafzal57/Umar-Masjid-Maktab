@@ -2,6 +2,8 @@ package com.example.umarmasjid.di
 
 import com.example.umarmasjid.data.repository.OfflineFirstPrayerTimesRepository
 import com.example.umarmasjid.data.repository.SupabaseAuthRepository
+import com.example.umarmasjid.data.sync.SyncManager
+import com.example.umarmasjid.data.sync.WorkManagerSyncManager
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.PrayerTimesRepository
 import dagger.Binds
@@ -25,4 +27,12 @@ abstract class RepositoryModule {
     abstract fun bindAuthRepository(
         impl: SupabaseAuthRepository
     ): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncManager(impl: WorkManagerSyncManager): SyncManager
+
+    /*@Binds
+    @Singleton
+    abstract fun bindSyncManager(impl: DebouncedSyncManager): SyncManager*/
 }

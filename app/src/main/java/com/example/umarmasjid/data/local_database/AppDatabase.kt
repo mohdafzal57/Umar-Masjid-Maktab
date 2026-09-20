@@ -6,15 +6,18 @@ import androidx.room.TypeConverters
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
+import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
+import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
 
 @Database(
     entities = [
         StudentEntity::class,
         AttendanceEntity::class,
-        PaymentEntity::class
+        PaymentEntity::class,
+        SyncOperationEntity::class
     ],
     version = 1
 )
@@ -24,4 +27,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun studentDao(): StudentDao
     abstract fun attendanceDao(): AttendanceDao
     abstract fun feeDao(): PaymentDao
+    abstract fun syncOperationDao(): SyncOperationDao
 }

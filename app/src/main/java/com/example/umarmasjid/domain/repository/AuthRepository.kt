@@ -9,6 +9,9 @@ enum class AuthState {
 }
 
 interface AuthRepository {
+    val teacherId: String
     val authState: Flow<AuthState>
+    suspend fun login(email: String, password: String)
+    suspend fun signUp(email: String, password: String)
     suspend fun logout()
 }

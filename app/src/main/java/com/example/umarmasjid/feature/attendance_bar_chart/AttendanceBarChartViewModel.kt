@@ -3,7 +3,7 @@ package com.example.umarmasjid.feature.attendance_bar_chart
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
-import com.example.umarmasjid.repository.AttendanceRepository
+import com.example.umarmasjid.repository.OfflineAttendanceRepository
 import com.example.umarmasjid.util.DateUtils
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel(assistedFactory = AttendanceBarChartViewModel.Factory::class)
 class AttendanceBarChartViewModel @AssistedInject constructor(
-    private val repository: AttendanceRepository,
+    private val repository: OfflineAttendanceRepository,
     @Assisted val studentId: String,
 ) : ViewModel() {
 
