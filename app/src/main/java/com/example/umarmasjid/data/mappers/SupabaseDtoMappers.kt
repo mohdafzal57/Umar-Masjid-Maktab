@@ -1,4 +1,4 @@
-package com.example.umarmasjid.data.mapper
+package com.example.umarmasjid.data.mappers
 
 import com.example.umarmasjid.data.dto.AttendanceDto
 import com.example.umarmasjid.data.dto.PaymentDto

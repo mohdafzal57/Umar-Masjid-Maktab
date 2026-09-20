@@ -12,7 +12,7 @@ import com.example.umarmasjid.data.local_database.dao.SyncEntityType
 import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
 import com.example.umarmasjid.data.local_database.dao.SyncOperationType
 import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
-import com.example.umarmasjid.data.mapper.toDto
+import com.example.umarmasjid.data.mappers.toDto
 import com.example.umarmasjid.repository.SupabaseRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
