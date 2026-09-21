@@ -4,9 +4,11 @@ import com.example.umarmasjid.data.dto.AttendanceDto
 import com.example.umarmasjid.data.dto.PaymentDto
 import com.example.umarmasjid.data.dto.StudentDto
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
+import com.example.umarmasjid.data.local_database.model.AttendanceStatus
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import java.time.Instant
+import java.time.LocalDate
 
 fun StudentEntity.toDto(): StudentDto {
     return StudentDto(
@@ -21,18 +23,18 @@ fun StudentEntity.toDto(): StudentDto {
     )
 }
 
-/*fun StudentDto.toEntity(): StudentEntity {
+fun StudentDto.toEntity(): StudentEntity {
     return StudentEntity(
         id = id,
         teacherId = teacherId,
         name = name,
         phoneNumber = phoneNumber,
         enrollmentDate = LocalDate.parse(enrollmentDate),
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
+        createdAt = Instant.parse(createdAt).toEpochMilli(),
+        updatedAt = Instant.parse(updatedAt).toEpochMilli(),
+        deletedAt = deletedAt?.let { Instant.parse(it).toEpochMilli() }
     )
-}*/
+}
 
 fun AttendanceEntity.toDto(): AttendanceDto {
     return AttendanceDto(
@@ -46,17 +48,17 @@ fun AttendanceEntity.toDto(): AttendanceDto {
     )
 }
 
-/*fun AttendanceDto.toEntity(): AttendanceEntity {
+fun AttendanceDto.toEntity(): AttendanceEntity {
     return AttendanceEntity(
         id = id,
         studentId = studentId,
         attendanceDate = LocalDate.parse(attendanceDate),
         attendanceStatus = AttendanceStatus.valueOf(attendanceStatus),
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
+        createdAt = Instant.parse(createdAt).toEpochMilli(),
+        updatedAt = Instant.parse(updatedAt).toEpochMilli(),
+        deletedAt = deletedAt?.let { Instant.parse(it).toEpochMilli() }
     )
-}*/
+}
 
 fun PaymentEntity.toDto(): PaymentDto {
     return PaymentDto(
@@ -71,15 +73,15 @@ fun PaymentEntity.toDto(): PaymentDto {
     )
 }
 
-/*fun PaymentDto.toEntity(): PaymentEntity {
+fun PaymentDto.toEntity(): PaymentEntity {
     return PaymentEntity(
         id = id,
         studentId = studentId,
         paymentDate = LocalDate.parse(paymentDate),
         amount = amount,
         note = note,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
+        createdAt = Instant.parse(createdAt).toEpochMilli(),
+        updatedAt = Instant.parse(updatedAt).toEpochMilli(),
+        deletedAt = deletedAt?.let { Instant.parse(it).toEpochMilli() }
     )
-}*/
+}
