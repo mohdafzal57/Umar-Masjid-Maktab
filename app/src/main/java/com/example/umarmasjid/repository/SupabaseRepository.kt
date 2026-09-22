@@ -149,19 +149,13 @@ class SupabaseRepository @Inject constructor(
             .decodeSingle<T>()
     }
 
-    suspend fun updateByColumn(
+    suspend inline fun <reified T : Any, reified V : Any> updateByColumn(
         tableName: String,
         columnName: String,
-        value: Any,
-        updates: Map<String, Any?>
+        value: V,
+        updateData: T
     ) {
-        supabase.from(tableName).update(
-            {
-                updates.forEach { (name, updatedValue) ->
-                    set(name, updatedValue)
-                }
-            }
-        ) {
+        supabase.from(tableName).update(updateData) {
             filter {
                 eq(columnName, value)
             }

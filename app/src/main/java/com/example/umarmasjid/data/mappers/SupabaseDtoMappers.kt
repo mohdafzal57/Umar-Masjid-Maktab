@@ -1,12 +1,12 @@
 package com.example.umarmasjid.data.mappers
 
-import com.example.umarmasjid.data.dto.AttendanceDto
-import com.example.umarmasjid.data.dto.PaymentDto
-import com.example.umarmasjid.data.dto.StudentDto
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
 import com.example.umarmasjid.data.local_database.model.AttendanceStatus
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
+import com.example.umarmasjid.data.networking.dto.AttendanceDto
+import com.example.umarmasjid.data.networking.dto.PaymentDto
+import com.example.umarmasjid.data.networking.dto.StudentDto
 import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetDateTime

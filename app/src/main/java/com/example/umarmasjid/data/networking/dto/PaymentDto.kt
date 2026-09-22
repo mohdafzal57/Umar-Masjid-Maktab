@@ -1,18 +1,17 @@
-package com.example.umarmasjid.data.dto
+package com.example.umarmasjid.data.networking.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class StudentDto(
+data class PaymentDto(
     val id: String,
-    @SerialName("teacher_id")
-    val teacherId: String,
-    val name: String,
-    @SerialName("phone_number")
-    val phoneNumber: String,
-    @SerialName("enrollment_date")
-    val enrollmentDate: String, // "YYYY-MM-DD"
+    @SerialName("student_id")
+    val studentId: String,
+    @SerialName("payment_date")
+    val paymentDate: String,
+    val amount: Double,
+    val note: String? = null,
     @SerialName("created_at")
     val createdAt: String,       // ISO-8601 string
     @SerialName("updated_at")

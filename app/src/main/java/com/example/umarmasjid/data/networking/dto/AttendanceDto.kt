@@ -1,4 +1,4 @@
-package com.example.umarmasjid.data.dto
+package com.example.umarmasjid.data.networking.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

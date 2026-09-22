@@ -1,9 +1,6 @@
 package com.example.umarmasjid.repository
 
 import androidx.room.withTransaction
-import com.example.umarmasjid.data.dto.AttendanceDto
-import com.example.umarmasjid.data.dto.PaymentDto
-import com.example.umarmasjid.data.dto.StudentDto
 import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
@@ -16,6 +13,10 @@ import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
 import com.example.umarmasjid.data.local_database.model.SyncStateEntity
 import com.example.umarmasjid.data.mappers.toDto
 import com.example.umarmasjid.data.mappers.toEntity
+import com.example.umarmasjid.data.networking.dto.AttendanceDto
+import com.example.umarmasjid.data.networking.dto.PaymentDto
+import com.example.umarmasjid.data.networking.dto.SoftDeletePayload
+import com.example.umarmasjid.data.networking.dto.StudentDto
 import com.example.umarmasjid.data.repository.SupabaseAuthRepository
 import java.time.Instant
 import javax.inject.Inject
@@ -163,10 +164,13 @@ class SyncRepository @Inject constructor(
                 supabaseRepository.upsert(tableName = "payments", value = payment.toDto())
             }
             SyncOperationType.DELETE -> {
-                supabaseRepository.deleteByColumn(
+                supabaseRepository.updateByColumn(
                     tableName = "payments",
                     columnName = "id",
-                    value = op.entityId
+                    value = op.entityId,
+                    updateData = SoftDeletePayload(
+                        deleted_at = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+                    )
                 )
             }
         }
@@ -179,10 +183,13 @@ class SyncRepository @Inject constructor(
                 supabaseRepository.upsert(tableName = "attendances", value = attendance.toDto())
             }
             SyncOperationType.DELETE -> {
-                supabaseRepository.deleteByColumn(
+                supabaseRepository.updateByColumn(
                     tableName = "attendances",
                     columnName = "id",
-                    value = op.entityId
+                    value = op.entityId,
+                    updateData = SoftDeletePayload(
+                        deleted_at = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+                    )
                 )
             }
         }
@@ -195,10 +202,13 @@ class SyncRepository @Inject constructor(
                 supabaseRepository.upsert(tableName = "students", value = student.toDto())
             }
             SyncOperationType.DELETE -> {
-                supabaseRepository.deleteByColumn(
+                supabaseRepository.updateByColumn(
                     tableName = "students",
                     columnName = "id",
-                    value = op.entityId
+                    value = op.entityId,
+                    updateData = SoftDeletePayload(
+                        deleted_at = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+                    )
                 )
             }
         }
