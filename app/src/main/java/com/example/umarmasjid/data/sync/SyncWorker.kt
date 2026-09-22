@@ -13,12 +13,12 @@ import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
 import com.example.umarmasjid.data.local_database.dao.SyncOperationType
 import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
 import com.example.umarmasjid.data.mappers.toDto
+import com.example.umarmasjid.repository.PullRepository
 import com.example.umarmasjid.repository.SupabaseRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
-// faced this error but resolved
-// @Assisted parameters can only be used within an @AssistedInject-annotated constructor.
+
 @HiltWorker
 class SyncWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -27,20 +27,15 @@ class SyncWorker @AssistedInject constructor(
     private val studentDao: StudentDao,
     private val attendanceDao: AttendanceDao,
     private val paymentDao: PaymentDao,
-    private val supabaseRepository: SupabaseRepository
+    private val supabaseRepository: SupabaseRepository,
+    private val pullRepository: PullRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
 
     override suspend fun doWork(): Result {
         return try {
-            val pendingOps = syncDao.getAllPending()
-            Log.d("SyncWorker", "Found ${pendingOps.size} pending operations")
-
-            for (op in pendingOps) {
-                Log.d("SyncWorker", "Processing op: ${op.id}, entity: ${op.entityType}, type: ${op.operation}")
-                processOperation(op)
-                syncDao.deleteById(op.id)
-            }
+            push()
+            pullRepository.pull()
 
             Result.success()
         } catch (e: Exception) {
@@ -52,6 +47,17 @@ class SyncWorker @AssistedInject constructor(
             } else {
                 Result.failure()
             }
+        }
+    }
+
+    private suspend fun push() {
+        val pendingOps = syncDao.getAllPending()
+        Log.d("SyncWorker", "Found ${pendingOps.size} pending operations")
+
+        for (op in pendingOps) {
+            Log.d("SyncWorker", "Processing op: ${op.id}, entity: ${op.entityType}, type: ${op.operation}")
+            processOperation(op)
+            syncDao.deleteById(op.id)
         }
     }
 

@@ -35,6 +35,64 @@ class SupabaseRepository @Inject constructor(
             .decodeList<T>()
     }
 
+    suspend inline fun <reified T : Any> getUpdatedAfter(
+        tableName: String,
+        updatedAt: String,
+        columns: Columns = Columns.ALL
+    ): List<T> {
+        return supabase
+            .from(tableName)
+            .select(columns = columns) {
+                filter {
+                    gt("updated_at", updatedAt)
+                }
+            }
+            .decodeList<T>()
+    }
+
+    suspend inline fun <reified T : Any> getStudentsUpdatedAfter(
+        teacherId: String,
+        updatedAt: String
+    ): List<T> {
+        return supabase
+            .from("students")
+            .select {
+                filter {
+                    eq("teacher_id", teacherId)
+                    gt("updated_at", updatedAt)
+                }
+            }
+            .decodeList<T>()
+    }
+
+    suspend inline fun <reified T : Any> getAttendancesUpdatedAfter(
+        teacherId: String,
+        updatedAt: String
+    ): List<T> {
+        return supabase
+            .from("attendances")
+            .select {
+                filter {
+                    gt("updated_at", updatedAt)
+                }
+            }
+            .decodeList<T>()
+    }
+
+    suspend inline fun <reified T : Any> getPaymentsUpdatedAfter(
+        teacherId: String,
+        updatedAt: String
+    ): List<T> {
+        return supabase
+            .from("payments")
+            .select {
+                filter {
+                    gt("updated_at", updatedAt)
+                }
+            }
+            .decodeList<T>()
+    }
+
     suspend inline fun <reified T : Any> getSingleByColumn(
         tableName: String,
         columnName: String,

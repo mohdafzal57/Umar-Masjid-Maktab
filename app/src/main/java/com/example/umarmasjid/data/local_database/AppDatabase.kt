@@ -7,17 +7,20 @@ import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
 import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
+import com.example.umarmasjid.data.local_database.dao.SyncStateDao
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
+import com.example.umarmasjid.data.local_database.model.SyncStateEntity
 
 @Database(
     entities = [
         StudentEntity::class,
         AttendanceEntity::class,
         PaymentEntity::class,
-        SyncOperationEntity::class
+        SyncOperationEntity::class,
+        SyncStateEntity::class
     ],
     version = 1
 )
@@ -28,4 +31,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun attendanceDao(): AttendanceDao
     abstract fun feeDao(): PaymentDao
     abstract fun syncOperationDao(): SyncOperationDao
+    abstract fun syncStateDao(): SyncStateDao
 }

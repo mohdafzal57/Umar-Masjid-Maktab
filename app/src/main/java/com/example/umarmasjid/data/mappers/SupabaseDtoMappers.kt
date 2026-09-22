@@ -9,6 +9,7 @@ import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import java.time.Instant
 import java.time.LocalDate
+import java.time.OffsetDateTime
 
 fun StudentEntity.toDto(): StudentDto {
     return StudentDto(
@@ -30,9 +31,10 @@ fun StudentDto.toEntity(): StudentEntity {
         name = name,
         phoneNumber = phoneNumber,
         enrollmentDate = LocalDate.parse(enrollmentDate),
-        createdAt = Instant.parse(createdAt).toEpochMilli(),
-        updatedAt = Instant.parse(updatedAt).toEpochMilli(),
-        deletedAt = deletedAt?.let { Instant.parse(it).toEpochMilli() }
+        // Use OffsetDateTime to parse strings with offsets (like +00:00), then convert to Instant
+        createdAt = OffsetDateTime.parse(createdAt).toInstant().toEpochMilli(),
+        updatedAt = OffsetDateTime.parse(updatedAt).toInstant().toEpochMilli(),
+        deletedAt = deletedAt?.let { OffsetDateTime.parse(it).toInstant().toEpochMilli() }
     )
 }
 
@@ -54,9 +56,10 @@ fun AttendanceDto.toEntity(): AttendanceEntity {
         studentId = studentId,
         attendanceDate = LocalDate.parse(attendanceDate),
         attendanceStatus = AttendanceStatus.valueOf(attendanceStatus),
-        createdAt = Instant.parse(createdAt).toEpochMilli(),
-        updatedAt = Instant.parse(updatedAt).toEpochMilli(),
-        deletedAt = deletedAt?.let { Instant.parse(it).toEpochMilli() }
+        // Use OffsetDateTime to parse strings with offsets (like +00:00), then convert to Instant
+        createdAt = OffsetDateTime.parse(createdAt).toInstant().toEpochMilli(),
+        updatedAt = OffsetDateTime.parse(updatedAt).toInstant().toEpochMilli(),
+        deletedAt = deletedAt?.let { OffsetDateTime.parse(it).toInstant().toEpochMilli() }
     )
 }
 
@@ -80,8 +83,9 @@ fun PaymentDto.toEntity(): PaymentEntity {
         paymentDate = LocalDate.parse(paymentDate),
         amount = amount,
         note = note,
-        createdAt = Instant.parse(createdAt).toEpochMilli(),
-        updatedAt = Instant.parse(updatedAt).toEpochMilli(),
-        deletedAt = deletedAt?.let { Instant.parse(it).toEpochMilli() }
+        // Use OffsetDateTime to parse strings with offsets (like +00:00), then convert to Instant
+        createdAt = OffsetDateTime.parse(createdAt).toInstant().toEpochMilli(),
+        updatedAt = OffsetDateTime.parse(updatedAt).toInstant().toEpochMilli(),
+        deletedAt = deletedAt?.let { OffsetDateTime.parse(it).toInstant().toEpochMilli() }
     )
 }
