@@ -8,8 +8,13 @@ import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
+import com.example.umarmasjid.data.local_database.dao.SyncEntityType
+import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
+import com.example.umarmasjid.data.local_database.dao.SyncOperationType
 import com.example.umarmasjid.data.local_database.dao.SyncStateDao
+import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
 import com.example.umarmasjid.data.local_database.model.SyncStateEntity
+import com.example.umarmasjid.data.mappers.toDto
 import com.example.umarmasjid.data.mappers.toEntity
 import com.example.umarmasjid.data.repository.SupabaseAuthRepository
 import java.time.Instant
@@ -17,16 +22,17 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class PullRepository @Inject constructor(
+class SyncRepository @Inject constructor(
     private val supabaseRepository: SupabaseRepository,
     private val supabaseAuthRepository: SupabaseAuthRepository,
     private val studentDao: StudentDao,
     private val attendanceDao: AttendanceDao,
     private val paymentDao: PaymentDao,
     private val syncStateDao: SyncStateDao,
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val syncDao: SyncOperationDao,
 ) {
-    suspend fun pull() {
+    suspend fun pullRemoteChanges() {
         val teacherId = supabaseAuthRepository.teacherId
         val lastSyncAt = syncStateDao.getLastSyncedAt(teacherId)
 
@@ -131,6 +137,70 @@ class PullRepository @Inject constructor(
                     lastSyncedAt = now
                 )
             )
+        }
+    }
+
+    suspend fun pushLocalChanges() {
+        val pendingOps = syncDao.getAllPending()
+        for (op in pendingOps) {
+            processOperation(op)
+            syncDao.deleteById(op.id)
+        }
+    }
+
+    private suspend fun processOperation(op: SyncOperationEntity) {
+        when(op.entityType) {
+            SyncEntityType.STUDENT -> syncStudent(op)
+            SyncEntityType.ATTENDANCE -> syncAttendance(op)
+            SyncEntityType.PAYMENT -> syncPayment(op)
+        }
+    }
+
+    private suspend fun syncPayment(op: SyncOperationEntity) {
+        when (op.operation) {
+            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
+                val payment = paymentDao.getPaymentById(op.entityId) ?: return
+                supabaseRepository.upsert(tableName = "payments", value = payment.toDto())
+            }
+            SyncOperationType.DELETE -> {
+                supabaseRepository.deleteByColumn(
+                    tableName = "payments",
+                    columnName = "id",
+                    value = op.entityId
+                )
+            }
+        }
+    }
+
+    private suspend fun syncAttendance(op: SyncOperationEntity) {
+        when (op.operation) {
+            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
+                val attendance = attendanceDao.getAttendanceById(op.entityId) ?: return
+                supabaseRepository.upsert(tableName = "attendances", value = attendance.toDto())
+            }
+            SyncOperationType.DELETE -> {
+                supabaseRepository.deleteByColumn(
+                    tableName = "attendances",
+                    columnName = "id",
+                    value = op.entityId
+                )
+            }
+        }
+    }
+
+    private suspend fun syncStudent(op: SyncOperationEntity) {
+        when(op.operation) {
+            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
+                val student = studentDao.getStudentEntityById(op.entityId) ?: return
+                supabaseRepository.upsert(tableName = "students", value = student.toDto())
+            }
+            SyncOperationType.DELETE -> {
+                supabaseRepository.deleteByColumn(
+                    tableName = "students",
+                    columnName = "id",
+                    value = op.entityId
+                )
+            }
         }
     }
 

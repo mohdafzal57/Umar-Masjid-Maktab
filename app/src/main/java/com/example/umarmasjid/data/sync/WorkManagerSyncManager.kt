@@ -78,13 +78,17 @@ class DebouncedSyncManager @Inject constructor(
 
         val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.SECONDS)
+            .setBackoffCriteria(
+                backoffPolicy = BackoffPolicy.EXPONENTIAL,
+                backoffDelay = 15,
+                timeUnit = TimeUnit.SECONDS
+            )
             .build()
 
         workManager.enqueueUniqueWork(
-            "SyncOutboxWork",
-            ExistingWorkPolicy.KEEP,
-            syncRequest
+            uniqueWorkName = "SyncOutboxWork",
+            existingWorkPolicy = ExistingWorkPolicy.KEEP,
+            request = syncRequest
         )
     }
 }
