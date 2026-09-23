@@ -1,5 +1,6 @@
 package com.example.umarmasjid.data.repository
 
+import com.example.umarmasjid.data.sync.SyncManager
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
 import io.github.jan.supabase.SupabaseClient
@@ -13,7 +14,8 @@ import javax.inject.Singleton
 
 @Singleton
 class SupabaseAuthRepository @Inject constructor(
-    private val supabase: SupabaseClient
+    private val supabase: SupabaseClient,
+    private val syncManager: SyncManager
 ) : AuthRepository {
 
     override val teacherId: String
@@ -35,6 +37,7 @@ class SupabaseAuthRepository @Inject constructor(
             this.email = email
             this.password = password
         }
+        syncManager.requestSync()
     }
 
     override suspend fun signUp(email: String, password: String) {

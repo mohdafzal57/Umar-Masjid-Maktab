@@ -16,6 +16,55 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
+//It is a common way to coalesce multiple local mutations into one sync trigger
+@Singleton
+class DebouncedSyncManager @Inject constructor(
+    private val workManager: WorkManager,
+    @ApplicationScope private val scope: CoroutineScope
+) : SyncManager {
+
+    private val syncRequests = Channel<Unit>(Channel.CONFLATED)
+
+    init {
+        scope.launch {
+            syncRequests.receiveAsFlow()
+                .debounce(1_500L) // Wait 1.5s after the last mutation
+                .collect {
+                    scheduleWork()
+                }
+        }
+    }
+
+    override fun requestSync() {
+        syncRequests.trySend(Unit)
+    }
+
+    override fun cancelAllSyncs() {
+        workManager.cancelAllWork()
+    }
+
+    private fun scheduleWork() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                backoffPolicy = BackoffPolicy.EXPONENTIAL,
+                backoffDelay = 15,
+                timeUnit = TimeUnit.SECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            uniqueWorkName = "SyncOutboxWork",
+            existingWorkPolicy = ExistingWorkPolicy.KEEP,
+            request = syncRequest
+        )
+    }
+}
+
 /*@Singleton
 class WorkManagerSyncManager @Inject constructor(
     private val workManager: WorkManager
@@ -48,43 +97,3 @@ class WorkManagerSyncManager @Inject constructor(
         )
     }
 }*/
-
-@Singleton
-class DebouncedSyncManager @Inject constructor(
-    private val workManager: WorkManager,
-    @ApplicationScope private val scope: CoroutineScope
-) : SyncManager {
-
-    private val syncRequests = Channel<Unit>(Channel.CONFLATED)
-
-    init {
-        scope.launch {
-            syncRequests.receiveAsFlow()
-                .debounce(1_500L) // Wait 1.5s after the last mutation
-                .collect {
-                    scheduleWork()
-                }
-        }
-    }
-
-    override fun requestSync() {
-        syncRequests.trySend(Unit)
-    }
-
-    private fun scheduleWork() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.SECONDS)
-            .build()
-
-        workManager.enqueueUniqueWork(
-            "SyncOutboxWork",
-            ExistingWorkPolicy.KEEP,
-            syncRequest
-        )
-    }
-}

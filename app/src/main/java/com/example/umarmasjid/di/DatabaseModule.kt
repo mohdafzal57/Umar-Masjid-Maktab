@@ -15,6 +15,7 @@ import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
+import com.example.umarmasjid.data.local_database.dao.SyncStateDao
 import com.example.umarmasjid.util.Constants.UMAR_MASJID_DATABASE
 import dagger.Binds
 import dagger.Module
@@ -92,5 +93,8 @@ abstract class DatabaseModule {
         fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
             return WorkManager.getInstance(context)
         }
+
+        @Provides
+        fun provideSyncState(db: AppDatabase): SyncStateDao = db.syncStateDao()
     }
 }

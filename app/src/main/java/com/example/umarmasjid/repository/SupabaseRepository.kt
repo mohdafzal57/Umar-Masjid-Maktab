@@ -1,8 +1,11 @@
 package com.example.umarmasjid.repository
 
+import com.example.umarmasjid.data.networking.dto.SoftDeleteStudentParamsForRPC
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.rpc
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +33,63 @@ class SupabaseRepository @Inject constructor(
             .select(columns = columns) {
                 filter {
                     eq(columnName, value)
+                }
+            }
+            .decodeList<T>()
+    }
+
+    suspend inline fun <reified T : Any> getUpdatedAfter(
+        tableName: String,
+        updatedAt: String,
+        columns: Columns = Columns.ALL
+    ): List<T> {
+        return supabase
+            .from(tableName)
+            .select(columns = columns) {
+                filter {
+                    gt(UPDATED_AT, updatedAt)
+                }
+            }
+            .decodeList<T>()
+    }
+
+    suspend inline fun <reified T : Any> getStudentsUpdatedAfter(
+        teacherId: String,
+        updatedAt: String
+    ): List<T> {
+        return supabase
+            .from(STUDENT_TABLE)
+            .select {
+                filter {
+                    eq(TEACHER_ID, teacherId)
+                    gt(UPDATED_AT, updatedAt)
+                }
+            }
+            .decodeList<T>()
+    }
+
+    suspend inline fun <reified T : Any> getAttendancesUpdatedAfter(
+        teacherId: String,
+        updatedAt: String
+    ): List<T> {
+        return supabase
+            .from(ATTENDANCE_TABLE)
+            .select {
+                filter {
+                    gt(UPDATED_AT, updatedAt)
+                }
+            }
+            .decodeList<T>()
+    }
+
+    suspend inline fun <reified T : Any> getPaymentsUpdatedAfter(
+        updatedAt: String
+    ): List<T> {
+        return supabase
+            .from(PAYMENT_TABLE)
+            .select {
+                filter {
+                    gt(UPDATED_AT, updatedAt)
                 }
             }
             .decodeList<T>()
@@ -91,19 +151,13 @@ class SupabaseRepository @Inject constructor(
             .decodeSingle<T>()
     }
 
-    suspend fun updateByColumn(
+    suspend inline fun <reified T : Any, reified V : Any> updateByColumn(
         tableName: String,
         columnName: String,
-        value: Any,
-        updates: Map<String, Any?>
+        value: V,
+        updateData: T
     ) {
-        supabase.from(tableName).update(
-            {
-                updates.forEach { (name, updatedValue) ->
-                    set(name, updatedValue)
-                }
-            }
-        ) {
+        supabase.from(tableName).update(updateData) {
             filter {
                 eq(columnName, value)
             }
@@ -157,5 +211,31 @@ class SupabaseRepository @Inject constructor(
                 }
             }
             .decodeSingle<T>()
+    }
+
+    suspend fun softDeleteStudent(
+        studentId: String,
+        timestamp: String
+    ) {
+        val parameters = SoftDeleteStudentParamsForRPC(
+            studentId = studentId,
+            timestamp = timestamp
+        )
+
+        supabase.postgrest.rpc(
+            function = RPC_SOFT_DELETE_STUDENT,
+            parameters = parameters
+        )
+    }
+
+    companion object {
+        const val STUDENT_TABLE = "students"
+        const val ATTENDANCE_TABLE = "attendances"
+        const val PAYMENT_TABLE = "payments"
+
+        const val TEACHER_ID = "teacher_id"
+        const val UPDATED_AT = "updated_at"
+
+        const val RPC_SOFT_DELETE_STUDENT = "soft_delete_student"
     }
 }

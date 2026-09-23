@@ -56,7 +56,10 @@ class StudentProfileViewModel @Inject constructor(
             }
             is StudentEvent.DeleteStudent -> {
                 viewModelScope.launch {
-                    offlineStudentRepository.deleteStudent(event.student.id, System.currentTimeMillis())
+                    offlineStudentRepository.deleteStudent(
+                        studentId = event.student.id,
+                        timestamp = System.currentTimeMillis()
+                    )
                 }
             }
         }

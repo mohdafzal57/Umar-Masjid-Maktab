@@ -1,12 +1,15 @@
 package com.example.umarmasjid.data.mappers
 
-import com.example.umarmasjid.data.dto.AttendanceDto
-import com.example.umarmasjid.data.dto.PaymentDto
-import com.example.umarmasjid.data.dto.StudentDto
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
+import com.example.umarmasjid.data.local_database.model.AttendanceStatus
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
+import com.example.umarmasjid.data.networking.dto.AttendanceDto
+import com.example.umarmasjid.data.networking.dto.PaymentDto
+import com.example.umarmasjid.data.networking.dto.StudentDto
 import java.time.Instant
+import java.time.LocalDate
+import java.time.OffsetDateTime
 
 fun StudentEntity.toDto(): StudentDto {
     return StudentDto(
@@ -21,18 +24,19 @@ fun StudentEntity.toDto(): StudentDto {
     )
 }
 
-/*fun StudentDto.toEntity(): StudentEntity {
+fun StudentDto.toEntity(): StudentEntity {
     return StudentEntity(
         id = id,
         teacherId = teacherId,
         name = name,
         phoneNumber = phoneNumber,
         enrollmentDate = LocalDate.parse(enrollmentDate),
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
+        // Use OffsetDateTime to parse strings with offsets (like +00:00), then convert to Instant
+        createdAt = OffsetDateTime.parse(createdAt).toInstant().toEpochMilli(),
+        updatedAt = OffsetDateTime.parse(updatedAt).toInstant().toEpochMilli(),
+        deletedAt = deletedAt?.let { OffsetDateTime.parse(it).toInstant().toEpochMilli() }
     )
-}*/
+}
 
 fun AttendanceEntity.toDto(): AttendanceDto {
     return AttendanceDto(
@@ -46,17 +50,18 @@ fun AttendanceEntity.toDto(): AttendanceDto {
     )
 }
 
-/*fun AttendanceDto.toEntity(): AttendanceEntity {
+fun AttendanceDto.toEntity(): AttendanceEntity {
     return AttendanceEntity(
         id = id,
         studentId = studentId,
         attendanceDate = LocalDate.parse(attendanceDate),
         attendanceStatus = AttendanceStatus.valueOf(attendanceStatus),
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
+        // Use OffsetDateTime to parse strings with offsets (like +00:00), then convert to Instant
+        createdAt = OffsetDateTime.parse(createdAt).toInstant().toEpochMilli(),
+        updatedAt = OffsetDateTime.parse(updatedAt).toInstant().toEpochMilli(),
+        deletedAt = deletedAt?.let { OffsetDateTime.parse(it).toInstant().toEpochMilli() }
     )
-}*/
+}
 
 fun PaymentEntity.toDto(): PaymentDto {
     return PaymentDto(
@@ -71,15 +76,16 @@ fun PaymentEntity.toDto(): PaymentDto {
     )
 }
 
-/*fun PaymentDto.toEntity(): PaymentEntity {
+fun PaymentDto.toEntity(): PaymentEntity {
     return PaymentEntity(
         id = id,
         studentId = studentId,
         paymentDate = LocalDate.parse(paymentDate),
         amount = amount,
         note = note,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
+        // Use OffsetDateTime to parse strings with offsets (like +00:00), then convert to Instant
+        createdAt = OffsetDateTime.parse(createdAt).toInstant().toEpochMilli(),
+        updatedAt = OffsetDateTime.parse(updatedAt).toInstant().toEpochMilli(),
+        deletedAt = deletedAt?.let { OffsetDateTime.parse(it).toInstant().toEpochMilli() }
     )
-}*/
+}

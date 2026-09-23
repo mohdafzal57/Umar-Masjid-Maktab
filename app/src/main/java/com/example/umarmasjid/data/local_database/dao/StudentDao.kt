@@ -36,13 +36,14 @@ interface StudentDao {
     @Query("SELECT * FROM students WHERE deleted_at IS NULL ORDER BY enrollment_date DESC LIMIT :limit")
     fun getRecentStudents(limit: Int = 5): Flow<List<StudentEntity>>
 
-    @Query("UPDATE students SET deleted_at = :timestamp WHERE id = :studentId")
+    //TODO: i missed updating UPDATED_AT field, probably many other places too.
+    @Query("UPDATE students SET deleted_at = :timestamp, updated_at = :timestamp WHERE id = :studentId")
     suspend fun softDeleteStudentInternal(studentId: String, timestamp: Long)
 
-    @Query("UPDATE attendances SET deleted_at = :timestamp WHERE student_id = :studentId")
+    @Query("UPDATE attendances SET deleted_at = :timestamp, updated_at = :timestamp WHERE student_id = :studentId")
     suspend fun softDeleteAttendanceInternal(studentId: String, timestamp: Long)
 
-    @Query("UPDATE payments SET deleted_at = :timestamp WHERE student_id = :studentId")
+    @Query("UPDATE payments SET deleted_at = :timestamp, updated_at = :timestamp WHERE student_id = :studentId")
     suspend fun softDeletePaymentsInternal(studentId: String, timestamp: Long)
 
     @Transaction
