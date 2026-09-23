@@ -33,6 +33,11 @@ class SyncRepository @Inject constructor(
     private val appDatabase: AppDatabase,
     private val syncDao: SyncOperationDao,
 ) {
+    suspend fun sync() {
+        pushLocalChanges()
+        pullRemoteChanges()
+    }
+
     suspend fun pullRemoteChanges() {
         val teacherId = supabaseAuthRepository.teacherId
         val lastSyncAt = syncStateDao.getLastSyncedAt(teacherId)
@@ -45,14 +50,21 @@ class SyncRepository @Inject constructor(
     }
 
     suspend fun initialSync(teacherId: String) {
+        val syncWatermark = System.currentTimeMillis()
+
         val students = supabaseRepository.getByColumn<StudentDto>(
-            tableName = "students",
-            columnName = "teacher_id",
+            tableName = STUDENTS_TABLE,
+            columnName = TEACHER_ID_COLUMN,
             value = teacherId
         )
-        val attendances = supabaseRepository.getAll<AttendanceDto>(tableName = "attendances")
-        val payments = supabaseRepository.getAll<PaymentDto>(tableName = "payments")
-        val now = System.currentTimeMillis()
+
+        val attendances = supabaseRepository.getAll<AttendanceDto>(
+            tableName = ATTENDANCES_TABLE
+        )
+
+        val payments = supabaseRepository.getAll<PaymentDto>(
+            tableName = PAYMENTS_TABLE
+        )
 
         appDatabase.withTransaction {
             students.forEach { student->
@@ -73,47 +85,51 @@ class SyncRepository @Inject constructor(
             syncStateDao.upsert(
                 SyncStateEntity(
                     userId = teacherId,
-                    lastSyncedAt = now
+                    lastSyncedAt = syncWatermark
                 )
             )
         }
     }
 
     suspend fun incrementalSync(teacherId: String, lastSyncAt: Long) {
-        val lastSyncedAtIso =
-            Instant.ofEpochMilli(lastSyncAt).toString()
+        // Capture the watermark BEFORE starting the pull.
+        val syncWatermark = System.currentTimeMillis()
+
+        // Get all changes since last sync
+        // Goes to postgreSQL
+        val lastSyncedAtIso = Instant.ofEpochMilli(lastSyncAt).toString()
 
         val students = supabaseRepository.getStudentsUpdatedAfter<StudentDto>(
             teacherId = teacherId,
             updatedAt = lastSyncedAtIso
         )
+        println("SYNC_REPO: students ${students}")
         val attendances =
             supabaseRepository.getAttendancesUpdatedAfter<AttendanceDto>(
                 teacherId = teacherId,
                 updatedAt = lastSyncedAtIso
             )
-
+        println("SYNC_REPO: attendances ${attendances}")
         val payments =
             supabaseRepository.getPaymentsUpdatedAfter<PaymentDto>(
-                teacherId = teacherId,
                 updatedAt = lastSyncedAtIso
             )
-
-        val now = System.currentTimeMillis()
-
+        println("SYNC_REPO: payments ${payments}")
         appDatabase.withTransaction {
             students.forEach { student ->
                 if (student.deletedAt == null) {
+                    println("SYNC_REPO: deleteAt is NULL ${student}")
                     studentDao.insertStudent(student.toEntity())
                 } else {
-                    studentDao.deleteStudent(student.id, now)
+                    println("SYNC_REPO: deleteAt is NOT null ${student}")
+                    studentDao.deleteStudent(student.id, syncWatermark)
                 }
             }
 
             attendances.forEach { attendance ->
 
                 if (attendance.deletedAt != null) {
-                    attendanceDao.softDeleteAttendance(attendance.id, now)
+                    attendanceDao.softDeleteAttendance(attendance.id, syncWatermark)
                 } else {
                     attendanceDao.insert(
                         attendance.toEntity()
@@ -124,7 +140,7 @@ class SyncRepository @Inject constructor(
             payments.forEach { payment ->
 
                 if (payment.deletedAt != null) {
-                    paymentDao.softDeletePayment(payment.id, now)
+                    paymentDao.softDeletePayment(payment.id, syncWatermark)
                 } else {
                     paymentDao.insertPayment(
                         payment.toEntity()
@@ -135,7 +151,7 @@ class SyncRepository @Inject constructor(
             syncStateDao.upsert(
                 SyncStateEntity(
                     userId = teacherId,
-                    lastSyncedAt = now
+                    lastSyncedAt = syncWatermark
                 )
             )
         }
@@ -161,15 +177,18 @@ class SyncRepository @Inject constructor(
         when (op.operation) {
             SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
                 val payment = paymentDao.getPaymentById(op.entityId) ?: return
-                supabaseRepository.upsert(tableName = "payments", value = payment.toDto())
+                supabaseRepository.upsert(
+                    tableName = PAYMENTS_TABLE,
+                    value = payment.toDto()
+                )
             }
             SyncOperationType.DELETE -> {
                 supabaseRepository.updateByColumn(
-                    tableName = "payments",
-                    columnName = "id",
+                    tableName = PAYMENTS_TABLE,
+                    columnName = ID_COLUMN,
                     value = op.entityId,
                     updateData = SoftDeletePayload(
-                        deleted_at = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+                        deletedAt = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
                     )
                 )
             }
@@ -180,15 +199,15 @@ class SyncRepository @Inject constructor(
         when (op.operation) {
             SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
                 val attendance = attendanceDao.getAttendanceById(op.entityId) ?: return
-                supabaseRepository.upsert(tableName = "attendances", value = attendance.toDto())
+                supabaseRepository.upsert(tableName = ATTENDANCES_TABLE, value = attendance.toDto())
             }
             SyncOperationType.DELETE -> {
                 supabaseRepository.updateByColumn(
-                    tableName = "attendances",
-                    columnName = "id",
+                    tableName = ATTENDANCES_TABLE,
+                    columnName = ID_COLUMN,
                     value = op.entityId,
                     updateData = SoftDeletePayload(
-                        deleted_at = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+                        deletedAt = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
                     )
                 )
             }
@@ -198,20 +217,43 @@ class SyncRepository @Inject constructor(
     private suspend fun syncStudent(op: SyncOperationEntity) {
         when(op.operation) {
             SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
-                val student = studentDao.getStudentEntityById(op.entityId) ?: return
-                supabaseRepository.upsert(tableName = "students", value = student.toDto())
+                val student =
+                    studentDao.getStudentEntityById(op.entityId) ?: return
+                supabaseRepository.upsert(
+                    tableName = STUDENTS_TABLE,
+                    value = student.toDto()
+                )
             }
             SyncOperationType.DELETE -> {
-                supabaseRepository.updateByColumn(
+                // Does not need anymore!
+                /*supabaseRepository.updateByColumn(
                     tableName = "students",
                     columnName = "id",
                     value = op.entityId,
                     updateData = SoftDeletePayload(
                         deleted_at = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
                     )
+                )*/
+                /***
+                 * Create a fun in postgreSQL to soft-delete
+                 * student as well as payments, attendances
+                 */
+                supabaseRepository.softDeleteStudent(
+                    studentId = op.entityId,
+                    timestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
                 )
             }
         }
     }
 
+    companion object {
+        // Supabase table names
+        const val STUDENTS_TABLE = "students"
+        const val ATTENDANCES_TABLE = "attendances"
+        const val PAYMENTS_TABLE = "payments"
+
+        // Supabase column names
+        const val ID_COLUMN = "id"
+        const val TEACHER_ID_COLUMN = "teacher_id"
+    }
 }

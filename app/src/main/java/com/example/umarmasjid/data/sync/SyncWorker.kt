@@ -21,9 +21,7 @@ class SyncWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            syncRepository.pushLocalChanges()
-            syncRepository.pullRemoteChanges()
-
+            syncRepository.sync()
             Result.success()
         } catch (e: IOException) {
             Log.e(TAG, "Temporary network failure", e)
