@@ -2,11 +2,11 @@ package com.example.umarmasjid
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.umarmasjid.core.data.location.LocationClient
 import com.example.umarmasjid.core.data.preferences.PrayerSettingsPreferences
 import com.example.umarmasjid.core.data.preferences.SystemSettingsPreferences
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
+import com.example.umarmasjid.domain.repository.LocationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val locationClient: LocationClient,
+    private val locationRepository: LocationRepository,
     private val preferences: PrayerSettingsPreferences,
     private val settings: SystemSettingsPreferences,
     private val authRepository: AuthRepository
@@ -50,11 +50,7 @@ class MainActivityViewModel @Inject constructor(
 
     fun fetchLocationOnce() {
         viewModelScope.launch {
-            val location = locationClient.getCurrentLocation()
-            if (location != null) {
-                preferences.setLocation(location.latitude, location.longitude)
-                preferences.setLocationInitialized(true)
-            }
+            locationRepository.fetchAndSaveCurrentLocation()
         }
     }
 

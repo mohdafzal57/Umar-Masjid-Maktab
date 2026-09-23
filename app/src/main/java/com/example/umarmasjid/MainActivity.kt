@@ -49,13 +49,7 @@ class MainActivity : ComponentActivity() {
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
             ) { permissions ->
-                val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                        permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-                if (granted) {
-                    checkAndEnableLocation {
-                        viewModel.fetchLocationOnce()
-                    }
-                }
+                if (permissions.hasLocationPermission()) fetchLocationWhenEnabled()
             }
 
             // Only request location if we know for sure it's not initialized (is false, not null)
@@ -90,9 +84,7 @@ class MainActivity : ComponentActivity() {
         ) == PackageManager.PERMISSION_GRANTED
 
         if (fineGranted || coarseGranted) {
-            checkAndEnableLocation {
-                viewModel.fetchLocationOnce()
-            }
+            fetchLocationWhenEnabled()
         } else {
             launcher.launch(
                 arrayOf(
@@ -100,6 +92,12 @@ class MainActivity : ComponentActivity() {
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 )
             )
+        }
+    }
+
+    private fun fetchLocationWhenEnabled() {
+        checkAndEnableLocation {
+            viewModel.fetchLocationOnce()
         }
     }
 
@@ -125,5 +123,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun Map<String, Boolean>.hasLocationPermission(): Boolean {
+        return this[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                this[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
 }

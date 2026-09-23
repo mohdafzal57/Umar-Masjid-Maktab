@@ -1,10 +1,12 @@
 package com.example.umarmasjid.di
 
 import com.example.umarmasjid.data.repository.OfflineFirstPrayerTimesRepository
+import com.example.umarmasjid.data.repository.DefaultLocationRepository
 import com.example.umarmasjid.data.repository.SupabaseAuthRepository
 import com.example.umarmasjid.data.sync.DebouncedSyncManager
 import com.example.umarmasjid.data.sync.SyncManager
 import com.example.umarmasjid.domain.repository.AuthRepository
+import com.example.umarmasjid.domain.repository.LocationRepository
 import com.example.umarmasjid.domain.repository.PrayerTimesRepository
 import dagger.Binds
 import dagger.Module
@@ -27,6 +29,12 @@ abstract class RepositoryModule {
     abstract fun bindAuthRepository(
         impl: SupabaseAuthRepository
     ): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLocationRepository(
+        impl: DefaultLocationRepository
+    ): LocationRepository
 
     /*@Binds
     @Singleton
