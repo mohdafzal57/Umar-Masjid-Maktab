@@ -1,4 +1,4 @@
-package com.example.umarmasjid.repository
+package com.example.umarmasjid.data.networking
 
 import com.example.umarmasjid.data.networking.dto.SoftDeleteStudentParamsForRPC
 import io.github.jan.supabase.SupabaseClient
@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SupabaseRepository @Inject constructor(
+class SupabaseRemoteDataSource @Inject constructor(
     @PublishedApi internal val supabase: SupabaseClient
 ) {
 
@@ -26,7 +26,7 @@ class SupabaseRepository @Inject constructor(
     suspend inline fun <reified T : Any> getByColumn(
         tableName: String,
         columnName: String,
-        value: Any,
+        value: String,
         columns: Columns = Columns.ALL
     ): List<T> {
         return supabase.from(tableName)
@@ -68,66 +68,6 @@ class SupabaseRepository @Inject constructor(
             .decodeList<T>()
     }
 
-    suspend inline fun <reified T : Any> getAttendancesUpdatedAfter(
-        teacherId: String,
-        updatedAt: String
-    ): List<T> {
-        return supabase
-            .from(ATTENDANCE_TABLE)
-            .select {
-                filter {
-                    gt(UPDATED_AT, updatedAt)
-                }
-            }
-            .decodeList<T>()
-    }
-
-    suspend inline fun <reified T : Any> getPaymentsUpdatedAfter(
-        updatedAt: String
-    ): List<T> {
-        return supabase
-            .from(PAYMENT_TABLE)
-            .select {
-                filter {
-                    gt(UPDATED_AT, updatedAt)
-                }
-            }
-            .decodeList<T>()
-    }
-
-    suspend inline fun <reified T : Any> getSingleByColumn(
-        tableName: String,
-        columnName: String,
-        value: Any,
-        columns: Columns = Columns.ALL
-    ): T {
-        return supabase.from(tableName)
-            .select(columns = columns) {
-                filter {
-                    eq(columnName, value)
-                }
-            }
-            .decodeSingle<T>()
-    }
-
-    suspend inline fun <reified T : Any> insert(
-        tableName: String,
-        value: T
-    ) {
-        supabase.from(tableName).insert(value)
-    }
-
-    suspend inline fun <reified T : Any> insertAndReturn(
-        tableName: String,
-        value: T
-    ): T {
-        return supabase.from(tableName)
-            .insert(value) {
-                select()
-            }
-            .decodeSingle<T>()
-    }
-
     suspend inline fun <reified T : Any> upsert(
         tableName: String,
         value: T,
@@ -138,18 +78,6 @@ class SupabaseRepository @Inject constructor(
         }
     }
 
-    suspend inline fun <reified T : Any> upsertAndReturn(
-        tableName: String,
-        value: T,
-        onConflict: String? = null
-    ): T {
-        return supabase.from(tableName)
-            .upsert(value) {
-                select()
-                onConflict?.let { this.onConflict = it }
-            }
-            .decodeSingle<T>()
-    }
 
     suspend inline fun <reified T : Any, reified V : Any> updateByColumn(
         tableName: String,
@@ -164,28 +92,6 @@ class SupabaseRepository @Inject constructor(
         }
     }
 
-    suspend inline fun <reified T : Any> updateByColumnAndReturn(
-        tableName: String,
-        columnName: String,
-        value: Any,
-        updates: Map<String, Any?>
-    ): T {
-        return supabase.from(tableName)
-            .update(
-                {
-                    updates.forEach { (name, updatedValue) ->
-                        set(name, updatedValue)
-                    }
-                }
-            ) {
-                select()
-                filter {
-                    eq(columnName, value)
-                }
-            }
-            .decodeSingle<T>()
-    }
-
     suspend fun deleteByColumn(
         tableName: String,
         columnName: String,
@@ -196,21 +102,6 @@ class SupabaseRepository @Inject constructor(
                 eq(columnName, value)
             }
         }
-    }
-
-    suspend inline fun <reified T : Any> deleteByColumnAndReturn(
-        tableName: String,
-        columnName: String,
-        value: Any
-    ): T {
-        return supabase.from(tableName)
-            .delete {
-                select()
-                filter {
-                    eq(columnName, value)
-                }
-            }
-            .decodeSingle<T>()
     }
 
     suspend fun softDeleteStudent(
@@ -230,9 +121,6 @@ class SupabaseRepository @Inject constructor(
 
     companion object {
         const val STUDENT_TABLE = "students"
-        const val ATTENDANCE_TABLE = "attendances"
-        const val PAYMENT_TABLE = "payments"
-
         const val TEACHER_ID = "teacher_id"
         const val UPDATED_AT = "updated_at"
 

@@ -17,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class OfflineStudentRepository @Inject constructor(
+class OfflineFirstStudentRepository @Inject constructor(
     private val appDatabase: AppDatabase,
     private val studentDao: StudentDao,
     private val syncOperationDao: SyncOperationDao,

@@ -16,14 +16,27 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class OfflinePaymentRepository @Inject constructor(
+class OfflineFirstPaymentRepository @Inject constructor(
     private val appDatabase: AppDatabase,
     private val paymentDao: PaymentDao,
     private val syncOperationDao: SyncOperationDao,
     private val syncManager: SyncManager
 ) {
-    suspend fun insertPayment(payment: PaymentEntity) {
+    suspend fun insertPayment(
+        studentId: String,
+        amount: Double,
+        note: String?,
+    ) {
         val now = System.currentTimeMillis()
+        val payment = PaymentEntity(
+            studentId = studentId,
+            amount = amount,
+            note = note,
+            paymentDate = LocalDate.now(),
+            createdAt = now,
+            updatedAt = now
+        )
+
         val syncOp = SyncOperationEntity(
             entityId = payment.id,
             entityType = SyncEntityType.PAYMENT,
@@ -39,6 +52,8 @@ class OfflinePaymentRepository @Inject constructor(
         syncManager.requestSync()
     }
 
+    // We don't give update payment functionality
+    // user has to delete it and create new.
     suspend fun updatePayment(payment: PaymentEntity) {
         val now = System.currentTimeMillis()
         val syncOp = SyncOperationEntity(
@@ -56,7 +71,9 @@ class OfflinePaymentRepository @Inject constructor(
         syncManager.requestSync()
     }
 
-    suspend fun deletePayment(paymentId: String, timestamp: Long) {
+    suspend fun deletePayment(paymentId: String) {
+        val timestamp = System.currentTimeMillis()
+
         val syncOp = SyncOperationEntity(
             entityId = paymentId,
             entityType = SyncEntityType.PAYMENT,

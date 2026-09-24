@@ -2,9 +2,8 @@ package com.example.umarmasjid.feature.payments
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.umarmasjid.data.local_database.model.PaymentEntity
-import com.example.umarmasjid.repository.OfflinePaymentRepository
-import com.example.umarmasjid.repository.OfflineStudentRepository
+import com.example.umarmasjid.repository.OfflineFirstPaymentRepository
+import com.example.umarmasjid.repository.OfflineFirstStudentRepository
 import com.example.umarmasjid.util.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,13 +11,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class PaymentsViewModel @Inject constructor(
-    private val offlineStudentRepository: OfflineStudentRepository,
-    private val offlinePaymentRepository: OfflinePaymentRepository
+    private val offlineFirstStudentRepository: OfflineFirstStudentRepository,
+    private val offlineFirstPaymentRepository: OfflineFirstPaymentRepository
 ) : ViewModel() {
 
     private val _studentsWithPaymentStatus = MutableStateFlow(PaymentState())
@@ -39,8 +37,8 @@ class PaymentsViewModel @Inject constructor(
             _studentsWithPaymentStatus.update { it.copy(isLoading = true) }
 
             combine(
-                offlinePaymentRepository.getAllStudentsWithPaymentWithinMonth(startOfTheMonth, startOfNextMonth),
-                offlineStudentRepository.getStudentsWhoNotPaid(startOfTheMonth, startOfNextMonth)
+                offlineFirstPaymentRepository.getAllStudentsWithPaymentWithinMonth(startOfTheMonth, startOfNextMonth),
+                offlineFirstStudentRepository.getStudentsWhoNotPaid(startOfTheMonth, startOfNextMonth)
             ) { paid, unpaid ->
                 paid to unpaid
             }.collect { (paidStudents, unpaidStudents) ->
@@ -61,16 +59,7 @@ class PaymentsViewModel @Inject constructor(
         note: String?
     ) {
         viewModelScope.launch {
-            offlinePaymentRepository.insertPayment(
-                PaymentEntity(
-                    studentId = studentId,
-                    paymentDate = LocalDate.now(),
-                    amount = amount,
-                    note = note,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-            )
+            offlineFirstPaymentRepository.insertPayment(studentId, amount, note)
         }
     }
 }

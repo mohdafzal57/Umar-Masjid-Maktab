@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentEntity
-import com.example.umarmasjid.repository.OfflinePaymentRepository
-import com.example.umarmasjid.repository.OfflineStudentRepository
+import com.example.umarmasjid.repository.OfflineFirstPaymentRepository
+import com.example.umarmasjid.repository.OfflineFirstStudentRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -15,12 +15,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 @HiltViewModel(assistedFactory = StudentPaymentViewModel.Factory::class)
 class StudentPaymentViewModel @AssistedInject constructor(
-    private val offlineStudentRepository: OfflineStudentRepository,
-    private val offlinePaymentRepository: OfflinePaymentRepository,
+    private val offlineFirstStudentRepository: OfflineFirstStudentRepository,
+    private val offlineFirstPaymentRepository: OfflineFirstPaymentRepository,
     @Assisted val studentId: String,
 ) : ViewModel() {
 
@@ -35,8 +34,8 @@ class StudentPaymentViewModel @AssistedInject constructor(
     init {
         viewModelScope.launch {
             combine(
-                offlineStudentRepository.getStudentById(studentId),
-                offlinePaymentRepository.getPaymentsTillNowByStudentId(studentId)
+                offlineFirstStudentRepository.getStudentById(studentId),
+                offlineFirstPaymentRepository.getPaymentsTillNowByStudentId(studentId)
             ) { student, payments ->
                 student to payments
             }.collect { (student, payments) ->
@@ -54,29 +53,24 @@ class StudentPaymentViewModel @AssistedInject constructor(
         when (event) {
             is PaymentEvent.AddPayment -> {
                 viewModelScope.launch {
-                    offlinePaymentRepository.insertPayment(
-                        PaymentEntity(
-                            studentId = event.studentId,
-                            amount = event.amount,
-                            note = event.note,
-                            paymentDate = LocalDate.now(),
-                            createdAt = System.currentTimeMillis(),
-                            updatedAt = System.currentTimeMillis()
-                        )
+                    offlineFirstPaymentRepository.insertPayment(
+                        studentId = event.studentId,
+                        amount = event.amount,
+                        note = event.note,
                     )
                 }
             }
 
             is PaymentEvent.DeletePayment -> {
                 viewModelScope.launch {
-                    offlinePaymentRepository.deletePayment(
+                    offlineFirstPaymentRepository.deletePayment(
                         paymentId = event.payment.id,
-                        timestamp = System.currentTimeMillis()
                     )
                 }
             }
         }
-    }}
+    }
+}
 
 data class StudentPaymentState(
     val student: StudentEntity? = null,

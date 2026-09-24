@@ -3,7 +3,7 @@ package com.example.umarmasjid.feature.students
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umarmasjid.data.local_database.model.StudentEntity
-import com.example.umarmasjid.repository.OfflineStudentRepository
+import com.example.umarmasjid.repository.OfflineFirstStudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +21,7 @@ data class StudentProfileState(
 
 @HiltViewModel
 class StudentProfileViewModel @Inject constructor(
-    private val offlineStudentRepository: OfflineStudentRepository
+    private val offlineFirstStudentRepository: OfflineFirstStudentRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StudentProfileState())
@@ -30,7 +30,7 @@ class StudentProfileViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            offlineStudentRepository.getAllStudents()
+            offlineFirstStudentRepository.getAllStudents()
                 .collect { students ->
                     _uiState.update { it.copy(students = students, isLoading = false) }
                 }
@@ -42,12 +42,12 @@ class StudentProfileViewModel @Inject constructor(
             is StudentEvent.AddStudent -> {
                 if (event.name.isBlank() || event.phoneNumber.isBlank()) return
                 viewModelScope.launch {
-                    offlineStudentRepository.addStudent(event.name, event.phoneNumber)
+                    offlineFirstStudentRepository.addStudent(event.name, event.phoneNumber)
                 }
             }
             is StudentEvent.UpdateStudent -> {
                 viewModelScope.launch {
-                    offlineStudentRepository.updateStudent(
+                    offlineFirstStudentRepository.updateStudent(
                         name = event.name,
                         phoneNumber = event.phoneNumber,
                         student = event.student
@@ -56,7 +56,7 @@ class StudentProfileViewModel @Inject constructor(
             }
             is StudentEvent.DeleteStudent -> {
                 viewModelScope.launch {
-                    offlineStudentRepository.deleteStudent(
+                    offlineFirstStudentRepository.deleteStudent(
                         studentId = event.student.id,
                         timestamp = System.currentTimeMillis()
                     )

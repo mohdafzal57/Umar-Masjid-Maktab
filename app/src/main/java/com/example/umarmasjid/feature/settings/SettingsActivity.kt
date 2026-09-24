@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -230,6 +231,17 @@ fun SettingsScreen(
                 description = "1.0.0",
                 icon = Icons.Default.Info,
                 onClick = { /* Info action */ }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsItem(
+                title = "Logout",
+                description = "Sign out of your account",
+                icon = Icons.Default.Logout,
+                onClick = {
+                    viewModel.logout()
+                }
             )
         }
     }

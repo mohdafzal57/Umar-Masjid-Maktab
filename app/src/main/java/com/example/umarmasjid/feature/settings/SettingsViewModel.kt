@@ -4,7 +4,8 @@ import android.content.Context
 import android.provider.ContactsContract
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.umarmasjid.repository.OfflineStudentRepository
+import com.example.umarmasjid.data.repository.SupabaseAuthRepository
+import com.example.umarmasjid.repository.OfflineFirstStudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val offlineStudentRepository: OfflineStudentRepository
+    private val offlineFirstStudentRepository: OfflineFirstStudentRepository,
+    private val supabaseAuthRepository: SupabaseAuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Idle)
@@ -26,11 +28,17 @@ class SettingsViewModel @Inject constructor(
     private val _importState = MutableStateFlow<ImportUiState>(ImportUiState.Idle)
     val importState = _importState.asStateFlow()
 
+    fun logout(){
+        viewModelScope.launch {
+            supabaseAuthRepository.logout()
+        }
+    }
+
     fun exportAsCsv() {
         viewModelScope.launch {
             _uiState.value = SettingsUiState.Loading
             try {
-                val students = offlineStudentRepository.getAllStudents().first()
+                val students = offlineFirstStudentRepository.getAllStudents().first()
                 if (students.isEmpty()) {
                     _uiState.value = SettingsUiState.Error("No student records found.")
                     return@launch
@@ -53,7 +61,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = SettingsUiState.Loading
             try {
-                val students = offlineStudentRepository.getAllStudents().first()
+                val students = offlineFirstStudentRepository.getAllStudents().first()
                 if (students.isEmpty()) {
                     _uiState.value = SettingsUiState.Error("No student records found.")
                     return@launch
@@ -123,7 +131,7 @@ class SettingsViewModel @Inject constructor(
             _importState.value = ImportUiState.Loading
             try {
                 selectedContacts.forEach { contact ->
-                    offlineStudentRepository.addStudent(
+                    offlineFirstStudentRepository.addStudent(
                         name = contact.name,
                         phoneNumber = contact.phoneNumber,
                     )

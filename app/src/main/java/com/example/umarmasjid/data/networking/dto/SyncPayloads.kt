@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SoftDeletePayload(
-    @SerialName("deleted_at") val deletedAt: String
+    @SerialName("deleted_at") val deletedAt: String,
+    @SerialName("updated_at") val updatedAt: String
 )
 
 /***
