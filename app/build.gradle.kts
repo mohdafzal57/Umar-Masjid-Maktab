@@ -15,7 +15,7 @@ localProperties.load(
 
 android {
     namespace = "com.example.umarmasjid"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.umarmasjid"
