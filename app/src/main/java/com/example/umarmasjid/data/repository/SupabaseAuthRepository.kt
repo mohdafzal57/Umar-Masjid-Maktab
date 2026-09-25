@@ -47,6 +47,10 @@ class SupabaseAuthRepository @Inject constructor(
         }
     }
 
+    override suspend fun resetPassword(email: String) {
+        supabase.auth.resetPasswordForEmail(email)
+    }
+
     override suspend fun logout() {
         supabase.auth.signOut()
     }

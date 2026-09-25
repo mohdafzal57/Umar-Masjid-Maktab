@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun LoginScreen(
     onNavigateToSignup: () -> Unit,
+    onNavigateToResetPassword: () -> Unit,
     onLoginSuccess: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
@@ -77,6 +78,18 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             enabled = !uiState.isLoading
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        ClickableText(
+            text = AnnotatedString("Forgot Password?"),
+            style = TextStyle(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
+            ),
+            onClick = { onNavigateToResetPassword() },
+            modifier = Modifier.align(Alignment.End)
         )
 
         if (uiState.errorMessage != null) {
