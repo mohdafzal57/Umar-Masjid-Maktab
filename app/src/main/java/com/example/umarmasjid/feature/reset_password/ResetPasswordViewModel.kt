@@ -2,7 +2,7 @@ package com.example.umarmasjid.feature.reset_password
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.umarmasjid.data.repository.SupabaseAuthRepository
+import com.example.umarmasjid.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ data class ResetPasswordUiState(
 
 @HiltViewModel
 class ResetPasswordViewModel @Inject constructor(
-    private val supabaseAuthRepository: SupabaseAuthRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ResetPasswordUiState())
@@ -40,7 +40,7 @@ class ResetPasswordViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                supabaseAuthRepository.resetPassword(email)
+                authRepository.resetPassword(email)
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (e: Exception) {
                 _uiState.update {

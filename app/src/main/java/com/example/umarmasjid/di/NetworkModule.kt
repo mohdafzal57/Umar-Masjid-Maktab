@@ -47,7 +47,10 @@ object SupabaseModule {
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseKey = BuildConfig.SUPABASE_KEY
         ) {
-            install(Auth)
+            install(Auth) {
+                scheme = "umarmasjid"
+                host = "auth"
+            }
             install(Postgrest)
             // Add other Supabase plugins here
         }

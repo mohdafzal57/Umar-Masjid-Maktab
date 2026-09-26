@@ -1,11 +1,13 @@
 package com.example.umarmasjid.domain.repository
 
+import android.content.Intent
 import kotlinx.coroutines.flow.Flow
 
-enum class AuthState {
-    AUTHENTICATED,
-    UNAUTHENTICATED,
-    LOADING
+sealed interface AuthState {
+    data object Loading : AuthState
+    data object Unauthenticated : AuthState
+    data object Authenticated : AuthState
+    data object PasswordRecovery : AuthState
 }
 
 interface AuthRepository {
@@ -14,5 +16,8 @@ interface AuthRepository {
     suspend fun login(email: String, password: String)
     suspend fun signUp(email: String, password: String)
     suspend fun resetPassword(email: String)
+    suspend fun updatePassword(newPassword: String)
+    suspend fun finishPasswordRecovery()
+    suspend fun handleDeeplink(intent: Intent)
     suspend fun logout()
 }

@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -96,9 +97,16 @@ fun SettingsScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    LaunchedEffect(authState) {
+        if (authState == AuthState.Unauthenticated) {
+            onBack()
+        }
+    }
 
     /***
      * You use it when you need to:

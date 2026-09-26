@@ -4,13 +4,17 @@ import android.content.Context
 import android.provider.ContactsContract
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.umarmasjid.data.repository.SupabaseAuthRepository
+import com.example.umarmasjid.domain.repository.AuthRepository
+import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.repository.OfflineFirstStudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.format.DateTimeFormatter
@@ -19,8 +23,15 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val offlineFirstStudentRepository: OfflineFirstStudentRepository,
-    private val supabaseAuthRepository: SupabaseAuthRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
+
+    val authState: StateFlow<AuthState> = authRepository.authState
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = AuthState.Loading
+        )
 
     private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Idle)
     val uiState = _uiState.asStateFlow()
@@ -30,7 +41,7 @@ class SettingsViewModel @Inject constructor(
 
     fun logout(){
         viewModelScope.launch {
-            supabaseAuthRepository.logout()
+            authRepository.logout()
         }
     }
 

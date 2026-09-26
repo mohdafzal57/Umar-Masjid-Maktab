@@ -1,6 +1,7 @@
 package com.example.umarmasjid
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,7 +17,9 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.umarmasjid.app.UmarMasjidRoot
+import com.example.umarmasjid.app.rememberUmarMasjidAppState
 import com.example.umarmasjid.domain.repository.AuthState
+import com.example.umarmasjid.feature.reset_password.UpdatePasswordScreen
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
@@ -40,6 +43,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        intent?.let { viewModel.handleIntent(it) }
+
         enableEdgeToEdge()
         setContent {
             val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
@@ -52,22 +57,50 @@ class MainActivity : ComponentActivity() {
                 if (permissions.hasLocationPermission()) fetchLocationWhenEnabled()
             }
 
-            // Only request location if we know for sure it's not initialized (is false, not null)
             LaunchedEffect(isLocationInitialized) {
                 if (isLocationInitialized == false) {
                     requestLocation(permissionLauncher)
                 }
             }
 
-            if (authState != AuthState.LOADING) {
-                UmarMasjidTheme(darkMode) {
-                    UmarMasjidRoot(
-                        isLoggedIn = authState == AuthState.AUTHENTICATED,
+            when (authState) {
+                AuthState.Loading -> Unit
+                AuthState.Authenticated,
+                AuthState.Unauthenticated -> {
+                    val appState = rememberUmarMasjidAppState(
+                        isLoggedIn = authState == AuthState.Authenticated,
                         onLogout = viewModel::logout
                     )
+
+                    LaunchedEffect(Unit) {
+                        viewModel.deepLinkNavKey.collect { navKey ->
+                            appState.navigator.navigate(navKey)
+                        }
+                    }
+
+                    UmarMasjidTheme(darkMode) {
+                        UmarMasjidRoot(
+                            isLoggedIn = authState == AuthState.Authenticated,
+                            onLogout = viewModel::logout,
+                            appState = appState
+                        )
+                    }
+                }
+                AuthState.PasswordRecovery -> {
+                    UmarMasjidTheme(darkMode) {
+                        UpdatePasswordScreen(
+                            onSuccessDone = viewModel::finishPasswordRecovery
+                        )
+                    }
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        viewModel.handleIntent(intent)
     }
 
     private fun requestLocation(

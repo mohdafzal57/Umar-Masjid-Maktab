@@ -8,8 +8,8 @@ import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
 import com.example.umarmasjid.data.local_database.dao.SyncOperationType
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
-import com.example.umarmasjid.data.repository.SupabaseAuthRepository
 import com.example.umarmasjid.data.sync.SyncManager
+import com.example.umarmasjid.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.util.UUID
@@ -21,7 +21,7 @@ class OfflineFirstStudentRepository @Inject constructor(
     private val appDatabase: AppDatabase,
     private val studentDao: StudentDao,
     private val syncOperationDao: SyncOperationDao,
-    private val supabaseAuthRepository: SupabaseAuthRepository,
+    private val authRepository: AuthRepository,
     private val syncManager: SyncManager
 ) {
 
@@ -37,7 +37,7 @@ class OfflineFirstStudentRepository @Inject constructor(
             name = name,
             phoneNumber = phoneNumber,
             enrollmentDate = LocalDate.now(),
-            teacherId = supabaseAuthRepository.teacherId,
+            teacherId = authRepository.teacherId,
             createdAt = now,
             updatedAt = now,
         )

@@ -7,14 +7,12 @@ import com.example.umarmasjid.feature.signup.SignUpNavKey
 import com.example.umarmasjid.navigation.UmarMasjidNavigator
 
 fun EntryProviderScope<NavKey>.loginEntry(
-    navigator: UmarMasjidNavigator,
-    onLoginSuccess: () -> Unit
+    navigator: UmarMasjidNavigator
 ) {
     entry<LoginNavKey> {
         LoginScreen(
             onNavigateToSignup = { navigator.navigate(SignUpNavKey) },
             onNavigateToResetPassword = { navigator.navigate(ResetPasswordNavKey) },
-            onLoginSuccess = onLoginSuccess
         )
     }
 }

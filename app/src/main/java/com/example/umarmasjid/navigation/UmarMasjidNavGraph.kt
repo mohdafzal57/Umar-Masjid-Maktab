@@ -10,6 +10,7 @@ import com.example.umarmasjid.feature.home.homeEntry
 import com.example.umarmasjid.feature.login.loginEntry
 import com.example.umarmasjid.feature.payments.paymentsEntry
 import com.example.umarmasjid.feature.reset_password.resetPasswordEntry
+import com.example.umarmasjid.feature.reset_password.updatePasswordEntry
 import com.example.umarmasjid.feature.signup.signupEntry
 import com.example.umarmasjid.feature.student_payment.studentPaymentEntry
 import com.example.umarmasjid.feature.students.studentEntry
@@ -29,7 +30,8 @@ fun UmarMasjidNavGraph(
         attendanceBarChartEntry(navigator)
         signupEntry(navigator)
         resetPasswordEntry(navigator)
-        loginEntry(navigator, onLoginSuccess = { /* Logic handled by auth state change */ })
+        updatePasswordEntry(navigator)
+        loginEntry(navigator)
     }
 
     NavDisplay(

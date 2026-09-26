@@ -18,7 +18,7 @@ import com.example.umarmasjid.data.networking.dto.AttendanceDto
 import com.example.umarmasjid.data.networking.dto.PaymentDto
 import com.example.umarmasjid.data.networking.dto.SoftDeletePayload
 import com.example.umarmasjid.data.networking.dto.StudentDto
-import com.example.umarmasjid.data.repository.SupabaseAuthRepository
+import com.example.umarmasjid.domain.repository.AuthRepository
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,7 +26,7 @@ import javax.inject.Singleton
 @Singleton
 class SyncRepository @Inject constructor(
     private val supabaseRemoteDataSource: SupabaseRemoteDataSource,
-    private val supabaseAuthRepository: SupabaseAuthRepository,
+    private val authRepository: AuthRepository,
     private val studentDao: StudentDao,
     private val attendanceDao: AttendanceDao,
     private val paymentDao: PaymentDao,
@@ -41,7 +41,7 @@ class SyncRepository @Inject constructor(
     }
 
     suspend fun pullRemoteChanges() {
-        val teacherId = supabaseAuthRepository.teacherId
+        val teacherId = authRepository.teacherId
         val lastSyncAt = syncStateDao.getLastSyncedAt(teacherId)
 
         if (lastSyncAt == null) {
