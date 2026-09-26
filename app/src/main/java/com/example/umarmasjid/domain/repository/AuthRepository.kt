@@ -17,7 +17,7 @@ interface AuthRepository {
     suspend fun signUp(email: String, password: String)
     suspend fun resetPassword(email: String)
     suspend fun updatePassword(newPassword: String)
-    suspend fun finishPasswordRecovery()
+    fun finishPasswordRecovery()
     suspend fun handleDeeplink(intent: Intent)
     suspend fun logout()
 }

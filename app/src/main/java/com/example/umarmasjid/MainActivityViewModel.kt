@@ -86,8 +86,6 @@ class MainActivityViewModel @Inject constructor(
     }
 
     fun finishPasswordRecovery() {
-        viewModelScope.launch {
-            authRepository.finishPasswordRecovery()
-        }
+        authRepository.finishPasswordRecovery()
     }
 }

@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,7 +44,7 @@ class SupabaseAuthRepository @Inject constructor(
                 sessionStatus is SessionStatus.Authenticated -> AuthState.Authenticated
                 else -> AuthState.Unauthenticated
             }
-        }
+        }.distinctUntilChanged()
 
     override suspend fun login(email: String, password: String) {
         supabase.auth.signInWith(Email) {
@@ -68,12 +69,15 @@ class SupabaseAuthRepository @Inject constructor(
     }
 
     override suspend fun updatePassword(newPassword: String) {
+        check(_isPasswordRecovery.value) {
+            "Password recovery session is not active."
+        }
         supabase.auth.updateUser {
             password = newPassword
         }
     }
 
-    override suspend fun finishPasswordRecovery() {
+    override fun finishPasswordRecovery() {
         _isPasswordRecovery.value = false
     }
 
