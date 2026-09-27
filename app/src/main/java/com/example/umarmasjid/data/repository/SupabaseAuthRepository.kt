@@ -2,6 +2,9 @@ package com.example.umarmasjid.data.repository
 
 import android.content.Intent
 import android.net.Uri
+import com.example.umarmasjid.core.data.networking.safeAuthCall
+import com.example.umarmasjid.core.domain.util.EmptyResult
+import com.example.umarmasjid.core.domain.util.SupabaseAuthError
 import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.sync.SyncManager
 import com.example.umarmasjid.domain.repository.AuthRepository
@@ -46,34 +49,42 @@ class SupabaseAuthRepository @Inject constructor(
             }
         }.distinctUntilChanged()
 
-    override suspend fun login(email: String, password: String) {
-        supabase.auth.signInWith(Email) {
-            this.email = email
-            this.password = password
-        }
-        syncManager.requestSync()
-    }
-
-    override suspend fun signUp(email: String, password: String) {
-        supabase.auth.signUpWith(Email) {
-            this.email = email
-            this.password = password
+    override suspend fun login(email: String, password: String): EmptyResult<SupabaseAuthError> {
+        return safeAuthCall {
+            supabase.auth.signInWith(Email) {
+                this.email = email
+                this.password = password
+            }
+            syncManager.requestSync()
         }
     }
 
-    override suspend fun resetPassword(email: String) {
-        supabase.auth.resetPasswordForEmail(
-            email = email,
-            redirectUrl = "umarmasjid://auth/callback"
-        )
+    override suspend fun signUp(email: String, password: String): EmptyResult<SupabaseAuthError> {
+        return safeAuthCall {
+            supabase.auth.signUpWith(Email) {
+                this.email = email
+                this.password = password
+            }
+        }
     }
 
-    override suspend fun updatePassword(newPassword: String) {
+    override suspend fun resetPassword(email: String): EmptyResult<SupabaseAuthError> {
+        return safeAuthCall {
+            supabase.auth.resetPasswordForEmail(
+                email = email,
+                redirectUrl = "umarmasjid://auth/callback"
+            )
+        }
+    }
+
+    override suspend fun updatePassword(newPassword: String): EmptyResult<SupabaseAuthError> {
         check(_isPasswordRecovery.value) {
             "Password recovery session is not active."
         }
-        supabase.auth.updateUser {
-            password = newPassword
+        return safeAuthCall {
+            supabase.auth.updateUser {
+                password = newPassword
+            }
         }
     }
 
@@ -103,26 +114,18 @@ class SupabaseAuthRepository @Inject constructor(
     }
 
     override suspend fun logout() {
-        try {
-            syncManager.cancelAllSyncs()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        syncManager.cancelAllSyncs()
+
         try {
             supabase.auth.signOut()
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Log the remote sign-out failure.
+        } finally {
             try {
                 supabase.auth.clearSession()
-            } catch (clearErr: Exception) {
-                clearErr.printStackTrace()
-            }
-        } finally {
-            withContext(Dispatchers.IO) {
-                try {
+            } finally {
+                withContext(Dispatchers.IO) {
                     appDatabase.clearAllTables()
-                } catch (e: Exception) {
-                    e.printStackTrace()
                 }
             }
         }
