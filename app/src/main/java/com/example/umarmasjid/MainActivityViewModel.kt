@@ -9,7 +9,6 @@ import com.example.umarmasjid.core.data.preferences.SystemSettingsPreferences
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.domain.repository.LocationRepository
-import com.example.umarmasjid.navigation.deeplink.DeepLinkHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,11 +26,7 @@ class MainActivityViewModel @Inject constructor(
     private val preferences: PrayerSettingsPreferences,
     private val settings: SystemSettingsPreferences,
     private val authRepository: AuthRepository,
-    private val deepLinkHandler: DeepLinkHandler
 ) : ViewModel() {
-
-    private val _deepLinkNavKey = MutableSharedFlow<NavKey>()
-    val deepLinkNavKey: SharedFlow<NavKey> = _deepLinkNavKey.asSharedFlow()
 
     val authState: StateFlow<AuthState> =
         authRepository.authState
@@ -65,23 +60,12 @@ class MainActivityViewModel @Inject constructor(
             if (uri.scheme == "umarmasjid" && uri.host == "auth") {
                 authRepository.handleDeeplink(intent)
             }
-
-            val navKey = deepLinkHandler.parseDeepLink(uri)
-            if (navKey != null) {
-                _deepLinkNavKey.emit(navKey)
-            }
         }
     }
 
     fun fetchLocationOnce() {
         viewModelScope.launch {
             locationRepository.fetchAndSaveCurrentLocation()
-        }
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            authRepository.logout()
         }
     }
 

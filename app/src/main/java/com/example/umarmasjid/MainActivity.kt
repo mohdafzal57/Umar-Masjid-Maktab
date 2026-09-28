@@ -64,18 +64,10 @@ class MainActivity : ComponentActivity() {
             }
 
             when (authState) {
-                AuthState.Loading -> Unit
-                AuthState.Authenticated,
-                AuthState.Unauthenticated -> {
+                AuthState.Authenticated, AuthState.Unauthenticated -> {
                     val appState = rememberUmarMasjidAppState(
                         isLoggedIn = authState == AuthState.Authenticated
                     )
-
-                    LaunchedEffect(Unit) {
-                        viewModel.deepLinkNavKey.collect { navKey ->
-                            appState.navigator.navigate(navKey)
-                        }
-                    }
 
                     UmarMasjidTheme(darkMode) {
                         UmarMasjidRoot(
@@ -91,6 +83,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+                AuthState.Loading -> Unit
             }
         }
     }
