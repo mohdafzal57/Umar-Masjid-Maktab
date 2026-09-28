@@ -7,9 +7,9 @@ import androidx.room.Query
 import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
 
 object SyncEntityType {
-    const val STUDENT = "STUDENT"
-    const val ATTENDANCE = "ATTENDANCE"
-    const val PAYMENT = "PAYMENT"
+    const val STUDENT = "students"
+    const val ATTENDANCE = "attendances"
+    const val PAYMENT = "payments"
 }
 
 object SyncOperationType {

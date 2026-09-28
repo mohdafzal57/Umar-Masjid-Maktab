@@ -20,11 +20,10 @@ class UmarMasjidAppState(
 @Composable
 fun rememberUmarMasjidAppState(
     isLoggedIn: Boolean,
-    onLogout: () -> Unit,
     navigationState: UmarMasjidNavigationState = rememberUmarMasjidNavigationState(isLoggedIn = isLoggedIn)
 ): UmarMasjidAppState {
-    val navigator = remember(navigationState, onLogout) { 
-        UmarMasjidNavigator(navigationState, onLogout) 
+    val navigator = remember(navigationState) {
+        UmarMasjidNavigator(navigationState)
     }
     return remember(navigationState, navigator) {
         UmarMasjidAppState(navigationState, navigator)

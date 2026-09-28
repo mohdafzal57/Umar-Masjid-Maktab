@@ -5,12 +5,12 @@ import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
+import com.example.umarmasjid.data.local_database.dao.SyncCursorDao
 import com.example.umarmasjid.data.local_database.dao.SyncEntityType
 import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
 import com.example.umarmasjid.data.local_database.dao.SyncOperationType
-import com.example.umarmasjid.data.local_database.dao.SyncStateDao
+import com.example.umarmasjid.data.local_database.model.SyncCursorEntity
 import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
-import com.example.umarmasjid.data.local_database.model.SyncStateEntity
 import com.example.umarmasjid.data.mappers.toDto
 import com.example.umarmasjid.data.mappers.toEntity
 import com.example.umarmasjid.data.networking.SupabaseRemoteDataSource
@@ -18,6 +18,7 @@ import com.example.umarmasjid.data.networking.dto.AttendanceDto
 import com.example.umarmasjid.data.networking.dto.PaymentDto
 import com.example.umarmasjid.data.networking.dto.SoftDeletePayload
 import com.example.umarmasjid.data.networking.dto.StudentDto
+import com.example.umarmasjid.data.networking.dto.SyncChangeDto
 import com.example.umarmasjid.domain.repository.AuthRepository
 import java.time.Instant
 import javax.inject.Inject
@@ -30,7 +31,7 @@ class SyncRepository @Inject constructor(
     private val studentDao: StudentDao,
     private val attendanceDao: AttendanceDao,
     private val paymentDao: PaymentDao,
-    private val syncStateDao: SyncStateDao,
+    private val syncCursorDao: SyncCursorDao,
     private val appDatabase: AppDatabase,
     private val syncDao: SyncOperationDao,
 ) {
@@ -42,17 +43,127 @@ class SyncRepository @Inject constructor(
 
     suspend fun pullRemoteChanges() {
         val teacherId = authRepository.teacherId
-        val lastSyncAt = syncStateDao.getLastSyncedAt(teacherId)
+        val lastVersion = syncCursorDao.getLastVersion()
 
-        if (lastSyncAt == null) {
+        if (lastVersion == null) {
             initialSync(teacherId)
         } else {
-            incrementalSync(teacherId, lastSyncAt)
+            incrementalSync(teacherId, lastVersion)
+        }
+    }
+
+    private suspend fun incrementalSync(teacherId: String, lastVersion: Long) {
+        val changes =
+            supabaseRemoteDataSource.getChangesAfterVersion(
+                teacherId = teacherId,
+                version = lastVersion
+            )
+        if (changes.isEmpty()) return
+
+        appDatabase.withTransaction {
+            for (change in changes) {
+                when (change.entityType) {
+                    SyncEntityType.STUDENT -> applyStudentChange(change)
+                    SyncEntityType.ATTENDANCE -> applyAttendanceChange(change)
+                    SyncEntityType.PAYMENT -> applyPaymentChange(change)
+                }
+            }
+        }
+    }
+
+    private suspend fun applyStudentChange(change: SyncChangeDto) {
+        when (change.operation) {
+            SyncOperationType.INSERT,
+            SyncOperationType.UPDATE -> {
+                val student = supabaseRemoteDataSource.getById<StudentDto>(
+                    tableName = STUDENTS_TABLE,
+                    id = change.entityId
+                )
+                if (student == null) return
+
+                if (student.deletedAt == null) {
+                    studentDao.insertStudent(student.toEntity())
+                } else {
+                    studentDao.deleteStudent(
+                        studentId = student.id,
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
+            }
+
+            SyncOperationType.DELETE -> {
+                studentDao.deleteStudent(
+                    studentId = change.entityId,
+                    timestamp = System.currentTimeMillis()
+                )
+            }
+        }
+    }
+
+    private suspend fun applyAttendanceChange(change: SyncChangeDto) {
+        when (change.operation) {
+            SyncOperationType.INSERT,
+            SyncOperationType.UPDATE -> {
+                val attendance = supabaseRemoteDataSource.getById<AttendanceDto>(
+                    tableName = ATTENDANCES_TABLE,
+                    id = change.entityId
+                )
+                if (attendance == null) return
+
+                if (attendance.deletedAt == null) {
+                    attendanceDao.insert(attendance.toEntity())
+                } else {
+                    attendanceDao.softDeleteAttendance(
+                        attendanceId = attendance.id,
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
+            }
+            SyncOperationType.DELETE -> {
+                attendanceDao.softDeleteAttendance(
+                    attendanceId = change.entityId,
+                    timestamp = System.currentTimeMillis()
+                )
+            }
+        }
+    }
+
+    private suspend fun applyPaymentChange(change: SyncChangeDto) {
+        when (change.operation) {
+            SyncOperationType.INSERT,
+            SyncOperationType.UPDATE -> {
+                val payment =
+                    supabaseRemoteDataSource.getById<PaymentDto>(
+                        tableName = PAYMENTS_TABLE,
+                        id = change.entityId
+                    )
+                if (payment == null) {
+                    return
+                }
+
+                if (payment.deletedAt == null) {
+                    paymentDao.insertPayment(
+                        payment.toEntity()
+                    )
+                } else {
+                    paymentDao.softDeletePayment(
+                        paymentId = payment.id,
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
+            }
+
+            SyncOperationType.DELETE -> {
+                paymentDao.softDeletePayment(
+                    paymentId = change.entityId,
+                    timestamp = System.currentTimeMillis()
+                )
+            }
         }
     }
 
     suspend fun initialSync(teacherId: String) {
-        val syncWatermark = System.currentTimeMillis()
+        val initialVersion = supabaseRemoteDataSource.getCurrentSyncVersion()
 
         val students = supabaseRemoteDataSource.getByColumn<StudentDto>(
             tableName = STUDENTS_TABLE,
@@ -69,7 +180,7 @@ class SyncRepository @Inject constructor(
         )
 
         appDatabase.withTransaction {
-            students.forEach { student->
+            students.forEach { student ->
                 if (student.deletedAt == null) {
                     studentDao.insertStudent(student.toEntity())
                 }
@@ -84,78 +195,9 @@ class SyncRepository @Inject constructor(
                     paymentDao.insertPayment(it.toEntity())
                 }
             }
-            syncStateDao.upsert(
-                SyncStateEntity(
-                    userId = teacherId,
-                    lastSyncedAt = syncWatermark
-                )
-            )
-        }
-    }
-
-    suspend fun incrementalSync(teacherId: String, lastSyncAt: Long) {
-        // Capture the watermark BEFORE starting the pull.
-        val syncWatermark = System.currentTimeMillis()
-
-        // Get all changes since last sync
-        // Goes to postgreSQL
-        val lastSyncedAtIso = Instant.ofEpochMilli(lastSyncAt).toString()
-        println("SYNC_REPO: lastSyncedAtIso $lastSyncedAtIso")
-
-        val students = supabaseRemoteDataSource.getStudentsUpdatedAfter<StudentDto>(
-            teacherId = teacherId,
-            updatedAt = lastSyncedAtIso
-        )
-        println("SYNC_REPO: students ${students}")
-        val attendances =
-            supabaseRemoteDataSource.getUpdatedAfter<AttendanceDto>(
-                tableName = ATTENDANCES_TABLE,
-                updatedAt = lastSyncedAtIso
-            )
-        println("SYNC_REPO: attendances ${attendances}")
-        val payments =
-            supabaseRemoteDataSource.getUpdatedAfter<PaymentDto>(
-                tableName = PAYMENTS_TABLE,
-                updatedAt = lastSyncedAtIso
-            )
-        println("SYNC_REPO: payments ${payments}")
-        appDatabase.withTransaction {
-            students.forEach { student ->
-                if (student.deletedAt == null) {
-                    println("SYNC_REPO: deleteAt is NULL ${student}")
-                    studentDao.insertStudent(student.toEntity())
-                } else {
-                    println("SYNC_REPO: deleteAt is NOT null ${student}")
-                    studentDao.deleteStudent(student.id, syncWatermark)
-                }
-            }
-
-            attendances.forEach { attendance ->
-
-                if (attendance.deletedAt != null) {
-                    attendanceDao.softDeleteAttendance(attendance.id, syncWatermark)
-                } else {
-                    attendanceDao.insert(
-                        attendance.toEntity()
-                    )
-                }
-            }
-
-            payments.forEach { payment ->
-
-                if (payment.deletedAt != null) {
-                    paymentDao.softDeletePayment(payment.id, syncWatermark)
-                } else {
-                    paymentDao.insertPayment(
-                        payment.toEntity()
-                    )
-                }
-            }
-
-            syncStateDao.upsert(
-                SyncStateEntity(
-                    userId = teacherId,
-                    lastSyncedAt = syncWatermark
+            syncCursorDao.upsert(
+                SyncCursorEntity(
+                    lastVersion = initialVersion
                 )
             )
         }
@@ -170,7 +212,7 @@ class SyncRepository @Inject constructor(
     }
 
     private suspend fun processOperation(op: SyncOperationEntity) {
-        when(op.entityType) {
+        when (op.entityType) {
             SyncEntityType.STUDENT -> syncStudent(op)
             SyncEntityType.ATTENDANCE -> syncAttendance(op)
             SyncEntityType.PAYMENT -> syncPayment(op)
@@ -181,11 +223,13 @@ class SyncRepository @Inject constructor(
         when (op.operation) {
             SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
                 val payment = paymentDao.getPaymentById(op.entityId) ?: return
+                println("SYNC_REPO: syncPayment(): $payment")
                 supabaseRemoteDataSource.upsert(
                     tableName = PAYMENTS_TABLE,
                     value = payment.toDto()
                 )
             }
+
             SyncOperationType.DELETE -> {
                 val timestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
                 supabaseRemoteDataSource.updateByColumn(
@@ -205,8 +249,12 @@ class SyncRepository @Inject constructor(
         when (op.operation) {
             SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
                 val attendance = attendanceDao.getAttendanceById(op.entityId) ?: return
-                supabaseRemoteDataSource.upsert(tableName = ATTENDANCES_TABLE, value = attendance.toDto())
+                supabaseRemoteDataSource.upsert(
+                    tableName = ATTENDANCES_TABLE,
+                    value = attendance.toDto()
+                )
             }
+
             SyncOperationType.DELETE -> {
                 val timestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
                 supabaseRemoteDataSource.updateByColumn(
@@ -223,7 +271,7 @@ class SyncRepository @Inject constructor(
     }
 
     private suspend fun syncStudent(op: SyncOperationEntity) {
-        when(op.operation) {
+        when (op.operation) {
             SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
                 val student =
                     studentDao.getStudentEntityById(op.entityId) ?: return
@@ -232,8 +280,9 @@ class SyncRepository @Inject constructor(
                     value = student.toDto()
                 )
             }
+
             SyncOperationType.DELETE -> {
-                // Does not need anymore!
+                // Does not need anymore! because it only deletes student
                 /*supabaseRepository.updateByColumn(
                     tableName = "students",
                     columnName = "id",

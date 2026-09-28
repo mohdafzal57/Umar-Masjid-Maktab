@@ -68,8 +68,7 @@ class MainActivity : ComponentActivity() {
                 AuthState.Authenticated,
                 AuthState.Unauthenticated -> {
                     val appState = rememberUmarMasjidAppState(
-                        isLoggedIn = authState == AuthState.Authenticated,
-                        onLogout = viewModel::logout
+                        isLoggedIn = authState == AuthState.Authenticated
                     )
 
                     LaunchedEffect(Unit) {
@@ -81,7 +80,6 @@ class MainActivity : ComponentActivity() {
                     UmarMasjidTheme(darkMode) {
                         UmarMasjidRoot(
                             isLoggedIn = authState == AuthState.Authenticated,
-                            onLogout = viewModel::logout,
                             appState = appState
                         )
                     }

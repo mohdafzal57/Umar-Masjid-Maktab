@@ -22,21 +22,7 @@ import com.example.umarmasjid.feature.login.LoginNavKey
 
 class UmarMasjidNavigator(
     val state: UmarMasjidNavigationState,
-    private val onLogout: () -> Unit = {}
 ) {
-
-    fun logout() {
-        state.topLevelStack.run {
-            if (size > 1) subList(1, size).clear()
-        }
-        state.subStacks.values.forEach { stack ->
-            if (stack.size > 1) stack.subList(1, stack.size).clear()
-        }
-        state.authStack.run {
-            if (size > 1) subList(1, size).clear()
-        }
-        onLogout()
-    }
 
     fun navigate(key: NavKey) {
         if (!state.isLoggedIn) {

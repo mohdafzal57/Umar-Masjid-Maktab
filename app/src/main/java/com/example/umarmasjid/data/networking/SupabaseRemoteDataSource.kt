@@ -1,10 +1,12 @@
 package com.example.umarmasjid.data.networking
 
 import com.example.umarmasjid.data.networking.dto.SoftDeleteStudentParamsForRPC
+import com.example.umarmasjid.data.networking.dto.SyncChangeDto
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,34 +40,47 @@ class SupabaseRemoteDataSource @Inject constructor(
             .decodeList<T>()
     }
 
-    suspend inline fun <reified T : Any> getUpdatedAfter(
-        tableName: String,
-        updatedAt: String,
-        columns: Columns = Columns.ALL
-    ): List<T> {
-        return supabase
-            .from(tableName)
-            .select(columns = columns) {
-                filter {
-                    gt(UPDATED_AT, updatedAt)
-                }
-            }
-            .decodeList<T>()
+    suspend fun getCurrentSyncVersion(): Long {
+        val currentSyncVersion = supabase.postgrest
+            .rpc(RPC_GET_CURRENT_SYNC_VERSION)
+            .decodeAs<Long>()
+        println("SYNC_REPO: getCurrentSyncVersion(): $currentSyncVersion")
+        return currentSyncVersion
     }
 
-    suspend inline fun <reified T : Any> getStudentsUpdatedAfter(
+    suspend fun getChangesAfterVersion(
         teacherId: String,
-        updatedAt: String
-    ): List<T> {
+        version: Long
+    ): List<SyncChangeDto> {
         return supabase
-            .from(STUDENT_TABLE)
+            .from(SYNC_CHANGES)
             .select {
                 filter {
-                    eq(TEACHER_ID, teacherId)
-                    gt(UPDATED_AT, updatedAt)
+//                    eq(TEACHER_ID, teacherId)
+                    gt(VERSION, version)
+                }
+                order(
+                    column = VERSION,
+                    order = Order.ASCENDING
+                )
+                limit(500)
+            }
+            .decodeList<SyncChangeDto>()
+    }
+
+    suspend inline fun <reified T: Any> getById(
+        tableName: String,
+        id: String
+    ): T? {
+        return supabase
+            .from(tableName)
+            .select {
+                filter {
+                    eq(ID, id)
                 }
             }
             .decodeList<T>()
+            .firstOrNull()
     }
 
     suspend inline fun <reified T : Any> upsert(
@@ -120,10 +135,14 @@ class SupabaseRemoteDataSource @Inject constructor(
     }
 
     companion object {
+        const val SYNC_CHANGES = "sync_changes"
+        const val VERSION = "version"
+        const val ID = "id"
         const val STUDENT_TABLE = "students"
         const val TEACHER_ID = "teacher_id"
         const val UPDATED_AT = "updated_at"
 
         const val RPC_SOFT_DELETE_STUDENT = "soft_delete_student"
+        const val RPC_GET_CURRENT_SYNC_VERSION = "get_current_sync_version"
     }
 }

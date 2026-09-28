@@ -15,7 +15,7 @@ import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
-import com.example.umarmasjid.data.local_database.dao.SyncStateDao
+import com.example.umarmasjid.data.local_database.dao.SyncCursorDao
 import com.example.umarmasjid.util.Constants.UMAR_MASJID_DATABASE
 import dagger.Binds
 import dagger.Module
@@ -95,6 +95,6 @@ abstract class DatabaseModule {
         }
 
         @Provides
-        fun provideSyncState(db: AppDatabase): SyncStateDao = db.syncStateDao()
+        fun provideSyncState(db: AppDatabase): SyncCursorDao = db.syncCursorDao()
     }
 }
