@@ -5,12 +5,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.example.umarmasjid.feature.attendance_bar_chart.navigateToAttendanceChart
-import com.example.umarmasjid.feature.student_payment.navigateToStudentPayment
+import com.example.umarmasjid.navigation.ConnectedRoute
 import com.example.umarmasjid.navigation.UmarMasjidNavigator
 
 fun EntryProviderScope<NavKey>.studentEntry(navigator: UmarMasjidNavigator) {
-    entry<StudentProfileNavKey> {
+    entry<ConnectedRoute.StudentRoute> {
         val viewModel: StudentProfileViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         StudentScreen(
@@ -18,9 +17,9 @@ fun EntryProviderScope<NavKey>.studentEntry(navigator: UmarMasjidNavigator) {
             isLoading = uiState.isLoading,
             popToHome = navigator::goBack,
             onEvent = viewModel::onEvent,
-            navigateToPayment = { id -> navigator.navigateToStudentPayment(id) },
+            navigateToPayment = { id -> navigator.navigate(ConnectedRoute.StudentPaymentRoute(id)) },
             navigateToAttendanceBarChart = { id ->
-                navigator.navigateToAttendanceChart(id)
+                navigator.navigate(ConnectedRoute.AttendanceBarChartRoute(id))
             }
         )
     }

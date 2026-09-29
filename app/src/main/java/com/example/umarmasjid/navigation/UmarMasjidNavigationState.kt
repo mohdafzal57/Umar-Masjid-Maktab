@@ -1,12 +1,11 @@
 package com.example.umarmasjid.navigation
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
@@ -17,161 +16,78 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import com.example.umarmasjid.feature.home.HomeNavKey
-import com.example.umarmasjid.feature.login.LoginNavKey
+import androidx.navigation3.runtime.serialization.NavKeySerializer
+import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
 
-class UmarMasjidNavigator(
-    val state: UmarMasjidNavigationState,
-) {
 
-    fun navigate(key: NavKey) {
-        if (!state.isLoggedIn) {
-            goToAuthKey(key)
-            return
-        }
-        when (key) {
-            state.currentTopLevelKey -> clearSubStack()
-            in state.topLevelKeys -> goToTopLevel(key)
-            else -> goToKey(key)
-        }
-    }
-
-    fun goBack() {
-        if (state.currentKey == state.startKey) return
-
-        if (state.isLoggedIn && state.currentKey == state.currentTopLevelKey) {
-            if (state.topLevelStack.size > 1) {
-                state.topLevelStack.removeLastOrNull()
-            }
-        } else {
-            state.currentSubStack.removeLastOrNull()
-        }
-    }
-
-    private fun goToKey(key: NavKey) {
-        state.currentSubStack.apply {
-            remove(key)
-            add(key)
-        }
-    }
-
-    private fun goToTopLevel(key: NavKey) {
-        state.topLevelStack.apply {
-            if (key == HomeNavKey) {
-                clear()
-            } else {
-                remove(key)
-            }
-            add(key)
-        }
-    }
-
-    private fun goToAuthKey(key: NavKey) {
-        state.authStack.apply {
-            remove(key)
-            add(key)
-        }
-    }
-
-    private fun clearSubStack() {
-        state.currentSubStack.run {
-            if (size > 1) subList(1, size).clear()
-        }
-    }
-}
-
-/**
- * Create a navigation state that persists config changes and process death.
- */
 @Composable
 fun rememberUmarMasjidNavigationState(
-    isLoggedIn: Boolean,
-    topLevelKeys: Set<NavKey> = TOP_LEVEL_NAV_ITEMS.keys,
+    rootStartRoute: NavKey,
+    authenticationStartRoute: NavKey,
+    topLevelStartRoute: NavKey,
+    topLevelRoutes: Set<NavKey>
 ): UmarMasjidNavigationState {
-    val authStack = rememberNavBackStack(LoginNavKey)
-    val topLevelStack = rememberNavBackStack(HomeNavKey)
-    val subStacks = topLevelKeys.associateWith { key -> rememberNavBackStack(key) }
 
-    val state = remember(topLevelKeys) {
+    val rootBackStack = rememberNavBackStack(rootStartRoute)
+    val authenticationBackStack = rememberNavBackStack(authenticationStartRoute)
+    val topLevelRoute = rememberSerializable(
+        topLevelStartRoute, topLevelRoutes,
+        serializer = MutableStateSerializer(NavKeySerializer())
+    ) {
+        mutableStateOf(topLevelStartRoute)
+    }
+    val backStacks = topLevelRoutes.associateWith { key -> rememberNavBackStack(key) }
+
+    return remember(topLevelStartRoute, topLevelRoutes) {
         UmarMasjidNavigationState(
-            isLoggedIn = isLoggedIn,
-            authStack = authStack,
-            topLevelStack = topLevelStack,
-            subStacks = subStacks,
+            rootStartRoute = rootStartRoute,
+            rootBackStack = rootBackStack,
+            authenticationBackStack = authenticationBackStack,
+            topLevelStartRoute = topLevelStartRoute,
+            topLevelRoute = topLevelRoute,
+            backStacks = backStacks
         )
     }
-
-    LaunchedEffect(isLoggedIn) {
-        state.isLoggedIn = isLoggedIn
-        if (!isLoggedIn) {
-            authStack.run { if (size > 1) subList(1, size).clear() }
-            topLevelStack.run { if (size > 1) subList(1, size).clear() }
-            subStacks.values.forEach { stack ->
-                if (stack.size > 1) stack.subList(1, stack.size).clear()
-            }
-        }
-    }
-
-    return state
 }
 
 class UmarMasjidNavigationState(
-    isLoggedIn: Boolean,
-    val authStack: NavBackStack<NavKey>,
-    val topLevelStack: NavBackStack<NavKey>,
-    val subStacks: Map<NavKey, NavBackStack<NavKey>>,
+    val rootStartRoute: NavKey,
+    val rootBackStack: NavBackStack<NavKey>,
+    val authenticationBackStack: NavBackStack<NavKey>,
+    val topLevelStartRoute: NavKey,
+    topLevelRoute: MutableState<NavKey>,
+    val backStacks: Map<NavKey, NavBackStack<NavKey>>
 ) {
-    var isLoggedIn: Boolean by mutableStateOf(isLoggedIn)
-        internal set
+    var topLevelRoute: NavKey by topLevelRoute
+    val currentRootDestination: NavKey
+        get() = rootBackStack.lastOrNull() ?: rootStartRoute
 
-    val currentTopLevelKey: NavKey by derivedStateOf {
-        if (!isLoggedIn) LoginNavKey else topLevelStack.last()
+    @Composable
+    fun toDecoratedEntries(
+        entryProvider: (NavKey) -> NavEntry<NavKey>
+    ): SnapshotStateList<NavEntry<NavKey>> {
+
+        val decoratedEntries = backStacks.mapValues { (_, stack) ->
+            val decorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
+                rememberViewModelStoreNavEntryDecorator<NavKey>()
+            )
+            rememberDecoratedNavEntries(
+                backStack = stack,
+                entryDecorators = decorators,
+                entryProvider = entryProvider
+            )
+        }
+
+        return getTopLevelRoutesInUse()
+            .flatMap { decoratedEntries[it] ?: emptyList() }
+            .toMutableStateList()
     }
 
-    val topLevelKeys
-        get() = subStacks.keys
-
-    @get:VisibleForTesting
-    val currentSubStack: NavBackStack<NavKey>
-        get() = if (!isLoggedIn) authStack else (subStacks[currentTopLevelKey]
-            ?: error("Sub stack for $currentTopLevelKey does not exist"))
-
-    @get:VisibleForTesting
-    val currentKey: NavKey by derivedStateOf { currentSubStack.last() }
-
-    val startKey: NavKey
-        get() = if (!isLoggedIn) LoginNavKey else HomeNavKey
-
-    val showBottomBar: Boolean
-        get() = isLoggedIn && currentTopLevelKey in TOP_LEVEL_NAV_ITEMS
-}
-
-@Composable
-fun UmarMasjidNavigationState.toEntries(
-    entryProvider: (NavKey) -> NavEntry<NavKey>,
-): SnapshotStateList<NavEntry<NavKey>> {
-    val decorators = listOf(
-        rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
-        rememberViewModelStoreNavEntryDecorator<NavKey>(),
-    )
-
-    if (!isLoggedIn) {
-        return rememberDecoratedNavEntries(
-            backStack = authStack,
-            entryDecorators = decorators,
-            entryProvider = entryProvider,
-        ).toMutableStateList()
-    }
-
-    val decoratedEntries = subStacks.mapValues { (_, stack) ->
-        rememberDecoratedNavEntries(
-            backStack = stack,
-            entryDecorators = decorators,
-            entryProvider = entryProvider,
-        )
-    }
-
-    return topLevelStack
-        .flatMap { decoratedEntries[it] ?: emptyList() }
-        .toMutableStateList()
+    private fun getTopLevelRoutesInUse(): List<NavKey> =
+        if (topLevelRoute == topLevelStartRoute) {
+            listOf(topLevelStartRoute)
+        } else {
+            listOf(topLevelStartRoute, topLevelRoute)
+        }
 }

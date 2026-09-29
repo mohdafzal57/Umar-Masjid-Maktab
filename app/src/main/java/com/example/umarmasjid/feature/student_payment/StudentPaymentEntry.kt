@@ -6,11 +6,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
+import com.example.umarmasjid.navigation.ConnectedRoute
 import com.example.umarmasjid.navigation.UmarMasjidNavigator
 import com.example.umarmasjid.navigation.horizontalSlideTransition
 
 fun EntryProviderScope<NavKey>.studentPaymentEntry(navigator: UmarMasjidNavigator) {
-    entry<StudentPaymentNavKey>(
+    entry<ConnectedRoute.StudentPaymentRoute>(
         metadata = NavDisplay.horizontalSlideTransition()
     ) { key ->
         val studentId = key.studentId

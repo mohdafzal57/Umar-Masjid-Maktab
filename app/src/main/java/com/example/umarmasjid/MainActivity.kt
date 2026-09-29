@@ -17,9 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.umarmasjid.app.UmarMasjidRoot
-import com.example.umarmasjid.app.rememberUmarMasjidAppState
 import com.example.umarmasjid.domain.repository.AuthState
-import com.example.umarmasjid.feature.reset_password.UpdatePasswordScreen
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
@@ -63,27 +61,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            when (authState) {
-                AuthState.Authenticated, AuthState.Unauthenticated -> {
-                    val appState = rememberUmarMasjidAppState(
-                        isLoggedIn = authState == AuthState.Authenticated
-                    )
-
-                    UmarMasjidTheme(darkMode) {
-                        UmarMasjidRoot(
-                            isLoggedIn = authState == AuthState.Authenticated,
-                            appState = appState
-                        )
-                    }
+            if (authState !is AuthState.Loading) {
+                UmarMasjidTheme(darkMode) {
+                    UmarMasjidRoot(authState)
                 }
-                AuthState.PasswordRecovery -> {
-                    UmarMasjidTheme(darkMode) {
-                        UpdatePasswordScreen(
-                            onSuccessDone = viewModel::finishPasswordRecovery
-                        )
-                    }
-                }
-                AuthState.Loading -> Unit
             }
         }
     }
