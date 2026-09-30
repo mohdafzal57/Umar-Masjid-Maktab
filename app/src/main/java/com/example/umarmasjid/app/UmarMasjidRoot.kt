@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
@@ -27,8 +28,18 @@ import com.example.umarmasjid.navigation.rootSection
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmarMasjidRoot(authState: AuthState) {
+
+    if (authState == AuthState.Loading) {
+        return
+    }
+
+    val initialRootRoute = remember(authState) {
+        // If they click a recovery link while closed, we need to start in Auth
+        if (authState == AuthState.Authenticated) ConnectedRoute else AuthenticationRoute
+    }
+
     val navigationState = rememberUmarMasjidNavigationState(
-        rootStartRoute = AuthenticationRoute,
+        rootStartRoute = initialRootRoute,
         authenticationStartRoute = AuthenticationRoute.LoginRoute,
         topLevelStartRoute = ConnectedRoute.HomeRoute,
         topLevelRoutes = TOP_LEVEL_NAV_ITEMS.keys
@@ -36,11 +47,22 @@ fun UmarMasjidRoot(authState: AuthState) {
 
     val navigator = remember { UmarMasjidNavigator(navigationState) }
 
-    when(authState) {
-        AuthState.Authenticated -> navigator.navigate(ConnectedRoute.HomeRoute)
-        AuthState.Loading -> Unit
-        AuthState.PasswordRecovery -> {}
-        AuthState.Unauthenticated -> navigator.navigate(AuthenticationRoute.LoginRoute)
+    LaunchedEffect(authState) {
+        when(authState) {
+            AuthState.Authenticated -> {
+                navigator.navigate(ConnectedRoute)
+            }
+            AuthState.Unauthenticated -> {
+                navigator.navigate(AuthenticationRoute)
+            }
+            AuthState.PasswordRecovery -> {
+                // Ensure we are in the Auth root graph...
+                navigator.navigate(AuthenticationRoute)
+                // ...and push the update password screen onto the stack
+                navigator.navigate(AuthenticationRoute.UpdatePasswordRoute)
+            }
+            else -> Unit
+        }
     }
 
     val showBottomBar = navigationState.currentRootDestination == ConnectedRoute
