@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.room.Upsert
 import com.example.umarmasjid.data.local_database.model.StudentEntity
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -14,6 +15,9 @@ import java.time.LocalDate
 interface StudentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudent(student: StudentEntity)
+
+    @Upsert
+    suspend fun upsertAllStudents(students: List<StudentEntity>)
 
     @Update
     suspend fun updateStudent(student: StudentEntity)

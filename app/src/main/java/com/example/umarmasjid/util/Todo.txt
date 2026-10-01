@@ -24,3 +24,6 @@ Home Screen --
 Setting Activity --
     @Refactor all the functionality using best practices.
     @Migrate to composable screen and navigation instead of changing a new activity.
+
+    Main Activity --
+        @Refactor create a wrapper location permission launcher for UmarMasjidRoot.

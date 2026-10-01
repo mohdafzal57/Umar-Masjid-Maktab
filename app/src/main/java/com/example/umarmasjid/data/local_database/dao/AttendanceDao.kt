@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.example.umarmasjid.data.local_database.model.AttendanceEntity
 import com.example.umarmasjid.data.local_database.model.DailyAttendanceCount
 import com.example.umarmasjid.data.local_database.model.StudentAttendance
@@ -16,6 +17,9 @@ interface AttendanceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(attendance: AttendanceEntity)
+
+    @Upsert
+    suspend fun upsertAllAttendances(attendances: List<AttendanceEntity>)
 
     @Update
     suspend fun update(attendance: AttendanceEntity)

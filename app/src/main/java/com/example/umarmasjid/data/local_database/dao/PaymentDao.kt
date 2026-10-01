@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.example.umarmasjid.data.local_database.model.PaymentEntity
 import com.example.umarmasjid.data.local_database.model.StudentWithPayment
 import kotlinx.coroutines.flow.Flow
@@ -15,6 +16,9 @@ interface PaymentDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPayment(payment: PaymentEntity)
+
+    @Upsert
+    suspend fun upsertAllPayments(payments: List<PaymentEntity>)
 
     @Update
     suspend fun updatePayment(payment: PaymentEntity)

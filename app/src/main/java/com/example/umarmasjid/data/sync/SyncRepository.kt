@@ -179,22 +179,29 @@ class SyncRepository @Inject constructor(
             tableName = PAYMENTS_TABLE
         )
 
+        println("SYNC_REPO [initial-sync] students: $students ")
+        println("SYNC_REPO [initial-sync] attendance: $attendances")
+        println("SYNC_REPO [initial-sync] payments: $payments")
+
+        // The transaction guarantees that Students insert completely,
+        // followed by Attendances, then Payments, and finally the Sync Cursor.
+        // If any step fails, the entire block rolls back.
         appDatabase.withTransaction {
-            students.forEach { student ->
-                if (student.deletedAt == null) {
-                    studentDao.insertStudent(student.toEntity())
-                }
-            }
-            attendances.forEach {
-                if (it.deletedAt == null) {
-                    attendanceDao.insert(it.toEntity())
-                }
-            }
-            payments.forEach {
-                if (it.deletedAt == null) {
-                    paymentDao.insertPayment(it.toEntity())
-                }
-            }
+            val validStudents = students
+                .filter { it.deletedAt == null }
+                .map { it.toEntity() }
+            studentDao.upsertAllStudents(validStudents)
+
+            val validAttendances = attendances
+                .filter { it.deletedAt == null }
+                .map { it.toEntity() }
+            attendanceDao.upsertAllAttendances(validAttendances)
+
+            val validPayments = payments
+                .filter { it.deletedAt == null }
+                .map { it.toEntity() }
+            paymentDao.upsertAllPayments(validPayments)
+
             syncCursorDao.upsert(
                 SyncCursorEntity(
                     lastVersion = initialVersion
