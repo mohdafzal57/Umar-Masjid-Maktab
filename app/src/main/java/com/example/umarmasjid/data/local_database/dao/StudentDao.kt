@@ -31,6 +31,9 @@ interface StudentDao {
     @Query("SELECT * FROM students WHERE id = :studentId LIMIT 1")
     suspend fun getStudentEntityById(studentId: String): StudentEntity?
 
+    @Query("SELECT * FROM students WHERE id IN (:ids)")
+    suspend fun getStudentEntitiesByIds(ids: List<String>): List<StudentEntity>
+
     @Query("SELECT * FROM students WHERE name LIKE '%' || :query || '%' AND deleted_at IS NULL")
     fun searchStudents(query: String): Flow<List<StudentEntity>>
 

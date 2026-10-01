@@ -13,8 +13,8 @@ data class SoftDeletePayload(
 * Remote Procedure Call
 ***/
 @Serializable
-data class SoftDeleteStudentParamsForRPC(
-    @SerialName("p_student_id") val studentId: String,
+data class SoftDeleteStudentsParamsForRPC(
+    @SerialName("p_student_ids") val studentIds: List<String>,
     @SerialName("p_timestamp") val timestamp: String
 )
 

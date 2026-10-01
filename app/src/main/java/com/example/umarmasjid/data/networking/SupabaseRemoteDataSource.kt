@@ -1,6 +1,6 @@
 package com.example.umarmasjid.data.networking
 
-import com.example.umarmasjid.data.networking.dto.SoftDeleteStudentParamsForRPC
+import com.example.umarmasjid.data.networking.dto.SoftDeleteStudentsParamsForRPC
 import com.example.umarmasjid.data.networking.dto.SyncChangeDto
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
@@ -93,6 +93,16 @@ class SupabaseRemoteDataSource @Inject constructor(
         }
     }
 
+    suspend inline fun <reified T : Any> upsertAll(
+        tableName: String,
+        values: List<T>,
+        onConflict: String? = null
+    ) {
+        supabase.from(tableName).upsert(values) {
+            onConflict?.let { this.onConflict = it }
+        }
+    }
+
 
     suspend inline fun <reified T : Any, reified V : Any> updateByColumn(
         tableName: String,
@@ -103,6 +113,21 @@ class SupabaseRemoteDataSource @Inject constructor(
         supabase.from(tableName).update(updateData) {
             filter {
                 eq(columnName, value)
+            }
+        }
+    }
+
+    suspend inline fun <reified T : Any> updateByColumnIn(
+        tableName: String,
+        columnName: String,
+        values: List<String>,
+        updateData: T
+    ) {
+        if (values.isEmpty()) return
+
+        supabase.from(tableName).update(updateData) {
+            filter {
+                isIn(columnName, values)
             }
         }
     }
@@ -119,17 +144,17 @@ class SupabaseRemoteDataSource @Inject constructor(
         }
     }
 
-    suspend fun softDeleteStudent(
-        studentId: String,
+    suspend fun softDeleteStudents(
+        studentIds: List<String>,
         timestamp: String
     ) {
-        val parameters = SoftDeleteStudentParamsForRPC(
-            studentId = studentId,
+        val parameters = SoftDeleteStudentsParamsForRPC(
+            studentIds = studentIds,
             timestamp = timestamp
         )
 
         supabase.postgrest.rpc(
-            function = RPC_SOFT_DELETE_STUDENT,
+            function = RPC_SOFT_DELETE_STUDENTS,
             parameters = parameters
         )
     }
@@ -142,7 +167,7 @@ class SupabaseRemoteDataSource @Inject constructor(
         const val TEACHER_ID = "teacher_id"
         const val UPDATED_AT = "updated_at"
 
-        const val RPC_SOFT_DELETE_STUDENT = "soft_delete_student"
+        const val RPC_SOFT_DELETE_STUDENTS = "soft_delete_students"
         const val RPC_GET_CURRENT_SYNC_VERSION = "get_current_sync_version"
     }
 }

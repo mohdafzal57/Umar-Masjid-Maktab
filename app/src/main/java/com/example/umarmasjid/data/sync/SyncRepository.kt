@@ -102,8 +102,7 @@ class SyncRepository @Inject constructor(
 
     private suspend fun applyAttendanceChange(change: SyncChangeDto) {
         when (change.operation) {
-            SyncOperationType.INSERT,
-            SyncOperationType.UPDATE -> {
+            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
                 val attendance = supabaseRemoteDataSource.getById<AttendanceDto>(
                     tableName = ATTENDANCES_TABLE,
                     id = change.entityId
@@ -119,6 +118,7 @@ class SyncRepository @Inject constructor(
                     )
                 }
             }
+
             SyncOperationType.DELETE -> {
                 attendanceDao.softDeleteAttendance(
                     attendanceId = change.entityId,
@@ -212,101 +212,164 @@ class SyncRepository @Inject constructor(
 
     suspend fun pushLocalChanges() {
         val pendingOps = syncDao.getAllPending()
-        for (op in pendingOps) {
-            processOperation(op)
-            syncDao.deleteById(op.id)
+        val groupedOps = pendingOps.groupBy { it.entityType }
+
+        groupedOps[SyncEntityType.STUDENT]?.let { ops ->
+            syncStudents(ops)
+        }
+        groupedOps[SyncEntityType.ATTENDANCE]?.let { ops ->
+            syncAttendances(ops)
+        }
+        groupedOps[SyncEntityType.PAYMENT]?.let { ops ->
+            syncPayments(ops)
         }
     }
 
-    private suspend fun processOperation(op: SyncOperationEntity) {
-        when (op.entityType) {
-            SyncEntityType.STUDENT -> syncStudent(op)
-            SyncEntityType.ATTENDANCE -> syncAttendance(op)
-            SyncEntityType.PAYMENT -> syncPayment(op)
+    private suspend fun syncStudents(op: List<SyncOperationEntity>) {
+        val upsertOps = op.filter {
+            it.operation in listOf(SyncOperationType.INSERT, SyncOperationType.UPDATE)
         }
-    }
+        val deleteOps = op.filter { it.operation == SyncOperationType.DELETE }
 
-    private suspend fun syncPayment(op: SyncOperationEntity) {
-        when (op.operation) {
-            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
-                val payment = paymentDao.getPaymentById(op.entityId) ?: return
-                println("SYNC_REPO: syncPayment(): $payment")
-                supabaseRemoteDataSource.upsert(
-                    tableName = PAYMENTS_TABLE,
-                    value = payment.toDto()
-                )
-            }
+        if (upsertOps.isNotEmpty()) {
+            val studentIds = upsertOps.map { it.entityId }
+            val students: List<StudentDto> = studentDao
+                .getStudentEntitiesByIds(studentIds)
+                .map { it.toDto() }
 
-            SyncOperationType.DELETE -> {
-                val timestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
-                supabaseRemoteDataSource.updateByColumn(
-                    tableName = PAYMENTS_TABLE,
-                    columnName = ID_COLUMN,
-                    value = op.entityId,
-                    updateData = SoftDeletePayload(
-                        deletedAt = timestamp,
-                        updatedAt = timestamp
+            if (students.isNotEmpty()) {
+                // Upsert a List of DTOs in ONE network call
+                supabaseRemoteDataSource
+                    .upsertAll(
+                        tableName = STUDENTS_TABLE,
+                        values = students
                     )
+            }
+            // Delete synced operations from local database
+            syncDao.deleteByIds(op.map { it.id })
+        }
+
+        /**
+         * Created a PostgreSQL function to soft-delete students using tombstones
+         * and cascade the deletion to their attendances and payments.
+         */
+        if (deleteOps.isNotEmpty()) {
+            val studentIds = deleteOps.map { it.entityId }
+            val timestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+
+            if (studentIds.isNotEmpty()) {
+                supabaseRemoteDataSource.softDeleteStudents(
+                    studentIds = studentIds,
+                    timestamp = timestamp
                 )
             }
+            syncDao.deleteByIds(deleteOps.map { it.id })
         }
     }
 
-    private suspend fun syncAttendance(op: SyncOperationEntity) {
-        when (op.operation) {
-            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
-                val attendance = attendanceDao.getAttendanceById(op.entityId) ?: return
-                supabaseRemoteDataSource.upsert(
+    private suspend fun syncAttendances(op: List<SyncOperationEntity>) {
+        val upsertOps = op.filter {
+            it.operation in listOf(
+                SyncOperationType.INSERT,
+                SyncOperationType.UPDATE
+            )
+        }
+
+        val deleteOps = op.filter {
+            it.operation == SyncOperationType.DELETE
+        }
+
+        // Upsert
+        if (upsertOps.isNotEmpty()) {
+            val attendanceIds = upsertOps.map { it.entityId }
+
+            val attendances: List<AttendanceDto> = attendanceDao
+                .getAttendanceEntitiesByIds(attendanceIds)
+                .map { it.toDto() }
+
+            if (attendances.isNotEmpty()) {
+                supabaseRemoteDataSource.upsertAll(
                     tableName = ATTENDANCES_TABLE,
-                    value = attendance.toDto()
+                    values = attendances
                 )
             }
 
-            SyncOperationType.DELETE -> {
-                val timestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
-                supabaseRemoteDataSource.updateByColumn(
-                    tableName = ATTENDANCES_TABLE,
-                    columnName = ID_COLUMN,
-                    value = op.entityId,
-                    updateData = SoftDeletePayload(
-                        deletedAt = timestamp,
-                        updatedAt = timestamp
-                    )
+            // Delete synced upsert operations
+            syncDao.deleteByIds(upsertOps.map { it.id })
+        }
+
+        // Soft delete
+        if (deleteOps.isNotEmpty()) {
+            val attendanceIds = deleteOps.map { it.entityId }
+
+            val timestamp =
+                Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+
+            supabaseRemoteDataSource.updateByColumnIn(
+                tableName = ATTENDANCES_TABLE,
+                columnName = ID_COLUMN,
+                values = attendanceIds,
+                updateData = SoftDeletePayload(
+                    deletedAt = timestamp,
+                    updatedAt = timestamp
                 )
-            }
+            )
+
+            // Delete synced delete operations
+            syncDao.deleteByIds(deleteOps.map { it.id })
         }
     }
 
-    private suspend fun syncStudent(op: SyncOperationEntity) {
-        when (op.operation) {
-            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
-                val student =
-                    studentDao.getStudentEntityById(op.entityId) ?: return
-                supabaseRemoteDataSource.upsert(
-                    tableName = STUDENTS_TABLE,
-                    value = student.toDto()
+    private suspend fun syncPayments(op: List<SyncOperationEntity>) {
+        val upsertOps = op.filter {
+            it.operation in listOf(
+                SyncOperationType.INSERT,
+                SyncOperationType.UPDATE
+            )
+        }
+
+        val deleteOps = op.filter {
+            it.operation == SyncOperationType.DELETE
+        }
+
+        // Upsert
+        if (upsertOps.isNotEmpty()) {
+            val paymentIds = upsertOps.map { it.entityId }
+
+            val payments: List<PaymentDto> = paymentDao
+                .getPaymentEntitiesByIds(paymentIds)
+                .map { it.toDto() }
+
+            if (payments.isNotEmpty()) {
+                supabaseRemoteDataSource.upsertAll(
+                    tableName = PAYMENTS_TABLE,
+                    values = payments
                 )
             }
 
-            SyncOperationType.DELETE -> {
-                // Does not need anymore! because it only deletes student
-                /*supabaseRepository.updateByColumn(
-                    tableName = "students",
-                    columnName = "id",
-                    value = op.entityId,
-                    updateData = SoftDeletePayload(
-                        deleted_at = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
-                    )
-                )*/
-                /***
-                 * Create a fun in postgreSQL to soft-delete
-                 * student as well as payments, attendances
-                 */
-                supabaseRemoteDataSource.softDeleteStudent(
-                    studentId = op.entityId,
-                    timestamp = Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+            // Delete synced upsert operations
+            syncDao.deleteByIds(upsertOps.map { it.id })
+        }
+
+        // Soft delete
+        if (deleteOps.isNotEmpty()) {
+            val paymentIds = deleteOps.map { it.entityId }
+
+            val timestamp =
+                Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+
+            supabaseRemoteDataSource.updateByColumnIn(
+                tableName = PAYMENTS_TABLE,
+                columnName = ID_COLUMN,
+                values = paymentIds,
+                updateData = SoftDeletePayload(
+                    deletedAt = timestamp,
+                    updatedAt = timestamp
                 )
-            }
+            )
+
+            // Delete synced delete operations
+            syncDao.deleteByIds(deleteOps.map { it.id })
         }
     }
 

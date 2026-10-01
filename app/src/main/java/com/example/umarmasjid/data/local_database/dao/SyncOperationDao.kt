@@ -30,6 +30,9 @@ interface SyncOperationDao {
     @Query("DELETE FROM sync_operations WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    @Query("DELETE FROM sync_operations WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
+
     @Query("UPDATE sync_operations SET retryCount = retryCount + 1 WHERE id = :id")
     suspend fun incrementRetry(id: String)
 

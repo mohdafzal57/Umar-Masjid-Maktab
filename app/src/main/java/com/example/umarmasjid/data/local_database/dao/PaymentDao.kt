@@ -26,6 +26,9 @@ interface PaymentDao {
     @Query("SELECT * FROM payments WHERE id = :paymentId LIMIT 1")
     suspend fun getPaymentById(paymentId: String): PaymentEntity?
 
+    @Query("SELECT * FROM payments WHERE id IN (:ids)")
+    suspend fun getPaymentEntitiesByIds(ids: List<String>): List<PaymentEntity>
+
     @Query("UPDATE payments SET deleted_at = :timestamp, updated_at = :timestamp WHERE id = :paymentId")
     suspend fun softDeletePayment(paymentId: String, timestamp: Long)
 
