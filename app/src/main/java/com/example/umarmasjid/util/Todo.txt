@@ -27,3 +27,5 @@ Setting Activity --
 
     Main Activity --
         @Refactor create a wrapper location permission launcher for UmarMasjidRoot.
+    Home --
+        store prayer times to local db so it will served quickly without network calling.
