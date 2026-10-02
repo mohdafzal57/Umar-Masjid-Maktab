@@ -7,9 +7,6 @@ import kotlinx.serialization.Serializable
 data class SyncChangeDto(
     val version: Long,
 
-    @SerialName("teacher_id")
-    val teacherId: String,
-
     @SerialName("entity_type")
     val entityType: String,
 

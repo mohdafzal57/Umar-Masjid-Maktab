@@ -48,16 +48,16 @@ class SyncRepository @Inject constructor(
         if (lastVersion == null) {
             initialSync(teacherId)
         } else {
-            incrementalSync(teacherId, lastVersion)
+            incrementalSync(lastVersion)
         }
     }
 
-    private suspend fun incrementalSync(teacherId: String, lastVersion: Long) {
-        val changes =
-            supabaseRemoteDataSource.getChangesAfterVersion(
-                teacherId = teacherId,
-                version = lastVersion
-            )
+    private suspend fun incrementalSync(lastVersion: Long) {
+        val changes = supabaseRemoteDataSource.getChangesAfterVersion(
+            version = lastVersion
+        )
+
+        println("SYNC_REPO: IncrementalSync() changes: $changes")
         if (changes.isEmpty()) return
 
         appDatabase.withTransaction {
@@ -164,6 +164,7 @@ class SyncRepository @Inject constructor(
 
     suspend fun initialSync(teacherId: String) {
         val initialVersion = supabaseRemoteDataSource.getCurrentSyncVersion()
+        println("SYNC_REPO() initialVersion $initialVersion")
 
         val students = supabaseRemoteDataSource.getByColumn<StudentDto>(
             tableName = STUDENTS_TABLE,

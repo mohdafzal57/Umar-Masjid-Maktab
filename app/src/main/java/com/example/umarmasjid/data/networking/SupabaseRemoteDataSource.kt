@@ -1,12 +1,12 @@
 package com.example.umarmasjid.data.networking
 
+import com.example.umarmasjid.data.networking.dto.GetChangesAfterVersionParamsForRPC
 import com.example.umarmasjid.data.networking.dto.SoftDeleteStudentsParamsForRPC
 import com.example.umarmasjid.data.networking.dto.SyncChangeDto
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
-import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,22 +49,19 @@ class SupabaseRemoteDataSource @Inject constructor(
     }
 
     suspend fun getChangesAfterVersion(
-        teacherId: String,
         version: Long
     ): List<SyncChangeDto> {
+
+        val parameters = GetChangesAfterVersionParamsForRPC(
+            version = version,
+            limit = SYNC_BATCH_SIZE
+        )
         return supabase
-            .from(SYNC_CHANGES)
-            .select {
-                filter {
-//                    eq(TEACHER_ID, teacherId)
-                    gt(VERSION, version)
-                }
-                order(
-                    column = VERSION,
-                    order = Order.ASCENDING
-                )
-                limit(500)
-            }
+            .postgrest
+            .rpc(
+                RPC_GET_CHANGES_AFTER_VERSION,
+                parameters
+            )
             .decodeList<SyncChangeDto>()
     }
 
@@ -160,14 +157,12 @@ class SupabaseRemoteDataSource @Inject constructor(
     }
 
     companion object {
-        const val SYNC_CHANGES = "sync_changes"
-        const val VERSION = "version"
         const val ID = "id"
-        const val STUDENT_TABLE = "students"
-        const val TEACHER_ID = "teacher_id"
-        const val UPDATED_AT = "updated_at"
+
+        private const val SYNC_BATCH_SIZE = 100
 
         const val RPC_SOFT_DELETE_STUDENTS = "soft_delete_students"
         const val RPC_GET_CURRENT_SYNC_VERSION = "get_current_sync_version"
+        const val RPC_GET_CHANGES_AFTER_VERSION = "get_changes_after_version"
     }
 }

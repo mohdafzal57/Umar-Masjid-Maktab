@@ -18,3 +18,9 @@ data class SoftDeleteStudentsParamsForRPC(
     @SerialName("p_timestamp") val timestamp: String
 )
 
+@Serializable
+data class GetChangesAfterVersionParamsForRPC(
+    @SerialName("p_version") val version: Long,
+    @SerialName("p_limit") val limit: Int
+)
+
