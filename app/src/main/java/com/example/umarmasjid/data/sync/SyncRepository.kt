@@ -65,6 +65,7 @@ class SyncRepository @Inject constructor(
 
         println("SYNC_REPO: IncrementalSync() changes: ${changes.last().version}")
 
+        // Group changes to enforce strict foreign-key sequencing
         val groupedChanges = changes.groupBy { it.entityType }
 
         groupedChanges[SyncEntityType.STUDENT]?.let {
@@ -76,6 +77,11 @@ class SyncRepository @Inject constructor(
         groupedChanges[SyncEntityType.PAYMENT]?.let {
             applyPaymentChanges(it)
         }
+
+        val newLatestVersion = changes.maxOf { it.version }
+        syncCursorDao.upsert(
+            SyncCursorEntity(lastVersion = newLatestVersion)
+        )
     }
 
     private suspend fun applyStudentChanges(changes: List<SyncChangeDto>) {
