@@ -9,6 +9,9 @@ import com.example.umarmasjid.data.local_database.dao.SyncCursorDao
 import com.example.umarmasjid.data.local_database.dao.SyncEntityType
 import com.example.umarmasjid.data.local_database.dao.SyncOperationDao
 import com.example.umarmasjid.data.local_database.dao.SyncOperationType
+import com.example.umarmasjid.data.local_database.model.AttendanceEntity
+import com.example.umarmasjid.data.local_database.model.PaymentEntity
+import com.example.umarmasjid.data.local_database.model.StudentEntity
 import com.example.umarmasjid.data.local_database.model.SyncCursorEntity
 import com.example.umarmasjid.data.local_database.model.SyncOperationEntity
 import com.example.umarmasjid.data.mappers.toDto
@@ -60,102 +63,135 @@ class SyncRepository @Inject constructor(
         println("SYNC_REPO: IncrementalSync() changes: $changes")
         if (changes.isEmpty()) return
 
-        appDatabase.withTransaction {
-            for (change in changes) {
-                when (change.entityType) {
-                    SyncEntityType.STUDENT -> applyStudentChange(change)
-                    SyncEntityType.ATTENDANCE -> applyAttendanceChange(change)
-                    SyncEntityType.PAYMENT -> applyPaymentChange(change)
-                }
-            }
+        println("SYNC_REPO: IncrementalSync() changes: ${changes.last().version}")
+
+        val groupedChanges = changes.groupBy { it.entityType }
+
+        groupedChanges[SyncEntityType.STUDENT]?.let {
+            applyStudentChanges(it)
+        }
+        groupedChanges[SyncEntityType.ATTENDANCE]?.let {
+            applyAttendanceChanges(it)
+        }
+        groupedChanges[SyncEntityType.PAYMENT]?.let {
+            applyPaymentChanges(it)
         }
     }
 
-    private suspend fun applyStudentChange(change: SyncChangeDto) {
-        when (change.operation) {
-            SyncOperationType.INSERT,
-            SyncOperationType.UPDATE -> {
-                val student = supabaseRemoteDataSource.getById<StudentDto>(
+    private suspend fun applyStudentChanges(changes: List<SyncChangeDto>) {
+        val upsertIds = changes.filter {
+            it.operation in listOf(
+                SyncOperationType.INSERT,
+                SyncOperationType.UPDATE
+            )
+        }.map { it.entityId }
+
+        val deleteIds = changes
+            .filter { it.operation == SyncOperationType.DELETE }
+            .map { it.entityId }
+            .toMutableList()
+
+        val fetchedStudents =
+            if (upsertIds.isNotEmpty()) {
+                supabaseRemoteDataSource.getByIds<StudentDto>(
                     tableName = STUDENTS_TABLE,
-                    id = change.entityId
+                    ids = upsertIds
                 )
-                if (student == null) return
-
-                if (student.deletedAt == null) {
-                    studentDao.insertStudent(student.toEntity())
-                } else {
-                    studentDao.deleteStudent(
-                        studentId = student.id,
-                        timestamp = System.currentTimeMillis()
-                    )
-                }
+            } else {
+                emptyList()
             }
 
-            SyncOperationType.DELETE -> {
-                studentDao.deleteStudent(
-                    studentId = change.entityId,
+        val validToInsert = mutableListOf<StudentEntity>()
+        fetchedStudents.forEach {
+            if (it.deletedAt == null) {
+                validToInsert.add(it.toEntity())
+            } else {
+                // I know the sync log called this an UPDATE,
+                // but looking at the actual data, this is a DELETE.
+                // Move it to the delete bucket
+                deleteIds.add(it.id)
+            }
+        }
+
+        appDatabase.withTransaction {
+            if (validToInsert.isNotEmpty()) {
+                studentDao.upsertAllStudents(validToInsert)
+            }
+            if (deleteIds.isNotEmpty()) {
+                studentDao.softDeleteStudents(
+                    studentIds = deleteIds,
                     timestamp = System.currentTimeMillis()
                 )
             }
         }
     }
 
-    private suspend fun applyAttendanceChange(change: SyncChangeDto) {
-        when (change.operation) {
-            SyncOperationType.INSERT, SyncOperationType.UPDATE -> {
-                val attendance = supabaseRemoteDataSource.getById<AttendanceDto>(
-                    tableName = ATTENDANCES_TABLE,
-                    id = change.entityId
-                )
-                if (attendance == null) return
+    private suspend fun applyAttendanceChanges(changes: List<SyncChangeDto>) {
+        val upsertIds = changes
+            .filter { it.operation in listOf(SyncOperationType.INSERT, SyncOperationType.UPDATE) }
+            .map { it.entityId }
 
-                if (attendance.deletedAt == null) {
-                    attendanceDao.insert(attendance.toEntity())
-                } else {
-                    attendanceDao.softDeleteAttendance(
-                        attendanceId = attendance.id,
-                        timestamp = System.currentTimeMillis()
-                    )
-                }
+        val deleteIds = changes
+            .filter { it.operation == SyncOperationType.DELETE }
+            .map { it.entityId }
+            .toMutableList()
+
+        val fetchedAttendances = if (upsertIds.isNotEmpty()) {
+            supabaseRemoteDataSource.getByIds<AttendanceDto>(ATTENDANCES_TABLE, upsertIds)
+        } else emptyList()
+
+        val validToInsert = mutableListOf<AttendanceEntity>()
+        fetchedAttendances.forEach { attendance ->
+            if (attendance.deletedAt == null) {
+                validToInsert.add(attendance.toEntity())
+            } else {
+                deleteIds.add(attendance.id)
             }
+        }
 
-            SyncOperationType.DELETE -> {
-                attendanceDao.softDeleteAttendance(
-                    attendanceId = change.entityId,
+        appDatabase.withTransaction {
+            if (validToInsert.isNotEmpty()) {
+                attendanceDao.upsertAllAttendances(validToInsert)
+            }
+            if (deleteIds.isNotEmpty()) {
+                attendanceDao.softDeleteAttendances(
+                    attendanceIds = deleteIds,
                     timestamp = System.currentTimeMillis()
                 )
             }
         }
     }
 
-    private suspend fun applyPaymentChange(change: SyncChangeDto) {
-        when (change.operation) {
-            SyncOperationType.INSERT,
-            SyncOperationType.UPDATE -> {
-                val payment =
-                    supabaseRemoteDataSource.getById<PaymentDto>(
-                        tableName = PAYMENTS_TABLE,
-                        id = change.entityId
-                    )
-                if (payment == null) {
-                    return
-                }
+    private suspend fun applyPaymentChanges(changes: List<SyncChangeDto>) {
+        val upsertIds = changes
+            .filter { it.operation in listOf(SyncOperationType.INSERT, SyncOperationType.UPDATE) }
+            .map { it.entityId }
 
-                if (payment.deletedAt == null) {
-                    paymentDao.insertPayment(
-                        payment.toEntity()
-                    )
-                } else {
-                    paymentDao.softDeletePayment(
-                        paymentId = payment.id,
-                        timestamp = System.currentTimeMillis()
-                    )
-                }
+        val deleteIds = changes
+            .filter { it.operation == SyncOperationType.DELETE }
+            .map { it.entityId }
+            .toMutableList()
+
+        val fetchedPayments = if (upsertIds.isNotEmpty()) {
+            supabaseRemoteDataSource.getByIds<PaymentDto>(PAYMENTS_TABLE, upsertIds)
+        } else emptyList()
+
+        val validToInsert = mutableListOf<PaymentEntity>()
+        fetchedPayments.forEach { payment ->
+            if (payment.deletedAt == null) {
+                validToInsert.add(payment.toEntity())
+            } else {
+                deleteIds.add(payment.id)
             }
+        }
 
-            SyncOperationType.DELETE -> {
-                paymentDao.softDeletePayment(
-                    paymentId = change.entityId,
+        appDatabase.withTransaction {
+            if (validToInsert.isNotEmpty()) {
+                paymentDao.upsertAllPayments(validToInsert)
+            }
+            if (deleteIds.isNotEmpty()) {
+                paymentDao.softDeletePayments(
+                    paymentIds = deleteIds,
                     timestamp = System.currentTimeMillis()
                 )
             }

@@ -32,6 +32,9 @@ interface PaymentDao {
     @Query("UPDATE payments SET deleted_at = :timestamp, updated_at = :timestamp WHERE id = :paymentId")
     suspend fun softDeletePayment(paymentId: String, timestamp: Long)
 
+    @Query("UPDATE payments SET deleted_at = :timestamp, updated_at = :timestamp WHERE id IN (:paymentIds)")
+    suspend fun softDeletePayments(paymentIds: List<String>, timestamp: Long)
+
     @Query("""
         SELECT 
             s.id AS studentId,

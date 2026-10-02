@@ -33,6 +33,9 @@ interface AttendanceDao {
     @Query("UPDATE attendances SET deleted_at = :timestamp WHERE id = :attendanceId")
     suspend fun softDeleteAttendance(attendanceId: String, timestamp: Long)
 
+    @Query("UPDATE attendances SET deleted_at = :timestamp WHERE id IN (:attendanceIds)")
+    suspend fun softDeleteAttendances(attendanceIds: List<String>, timestamp: Long)
+
     @Query("""
         SELECT COUNT(*) 
         FROM attendances 

@@ -80,6 +80,20 @@ class SupabaseRemoteDataSource @Inject constructor(
             .firstOrNull()
     }
 
+    suspend inline fun <reified T: Any> getByIds(
+        tableName: String,
+        ids: List<String>
+    ): List<T> {
+        return supabase
+            .from(tableName)
+            .select {
+                filter {
+                    isIn(ID, ids)
+                }
+            }
+            .decodeList<T>()
+    }
+
     suspend inline fun <reified T : Any> upsert(
         tableName: String,
         value: T,

@@ -47,6 +47,9 @@ interface StudentDao {
     @Query("UPDATE students SET deleted_at = :timestamp, updated_at = :timestamp WHERE id = :studentId")
     suspend fun softDeleteStudentInternal(studentId: String, timestamp: Long)
 
+    @Query("UPDATE students SET deleted_at = :timestamp, updated_at = :timestamp WHERE id IN (:studentIds)")
+    suspend fun softDeleteStudents(studentIds: List<String>, timestamp: Long)
+
     @Query("UPDATE attendances SET deleted_at = :timestamp, updated_at = :timestamp WHERE student_id = :studentId")
     suspend fun softDeleteAttendanceInternal(studentId: String, timestamp: Long)
 
