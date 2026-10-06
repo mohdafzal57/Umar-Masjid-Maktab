@@ -1,13 +1,11 @@
 package com.example.umarmasjid.domain.repository
 
-import com.example.umarmasjid.core.domain.util.NetworkError
-import com.example.umarmasjid.core.domain.util.Result
-import com.example.umarmasjid.domain.model.PrayerDay
+import com.example.umarmasjid.data.local_database.model.PrayerTimesEntity
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 interface PrayerTimesRepository {
-
-    suspend fun getMonthlyPrayerTimes(
-        year: Int,
-        month: Int,
-    ): Result<List<PrayerDay>, NetworkError>
+    fun observePrayerTime(date: LocalDate): Flow<PrayerTimesEntity?>
+    fun observeMonthlyPrayerTimes(year: Int, month: Int): Flow<List<PrayerTimesEntity>>
+    suspend fun syncCurrentAndNextMonth()
 }

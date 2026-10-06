@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import com.example.umarmasjid.data.sync.AppSyncObserver
+import com.example.umarmasjid.data.sync.PrayerTimesSyncScheduler
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -24,6 +25,7 @@ class UmarMasjidApplication: Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        PrayerTimesSyncScheduler.ensureScheduled(this)
         ProcessLifecycleOwner
             .get()
             .lifecycle

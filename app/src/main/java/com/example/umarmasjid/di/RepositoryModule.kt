@@ -1,7 +1,9 @@
 package com.example.umarmasjid.di
 
-import com.example.umarmasjid.data.repository.OfflineFirstPrayerTimesRepository
 import com.example.umarmasjid.data.repository.DefaultLocationRepository
+import com.example.umarmasjid.data.repository.LocalPrayerTimesDataSource
+import com.example.umarmasjid.data.repository.OfflineFirstPrayerTimesRepository
+import com.example.umarmasjid.data.repository.RoomPrayerTimesDataSource
 import com.example.umarmasjid.data.repository.SupabaseAuthRepository
 import com.example.umarmasjid.data.sync.DebouncedSyncManager
 import com.example.umarmasjid.data.sync.SyncManager
@@ -43,4 +45,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSyncManager(impl: DebouncedSyncManager): SyncManager
+
+    @Binds
+    @Singleton
+    abstract fun provideLocalPrayerTimesDataSource(
+        impl: RoomPrayerTimesDataSource
+    ): LocalPrayerTimesDataSource
+
 }

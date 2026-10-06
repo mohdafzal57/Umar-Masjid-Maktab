@@ -14,6 +14,7 @@ import com.example.umarmasjid.core.data.preferences.systemSettingsDataStore
 import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.local_database.dao.AttendanceDao
 import com.example.umarmasjid.data.local_database.dao.PaymentDao
+import com.example.umarmasjid.data.local_database.dao.PrayerTimesDao
 import com.example.umarmasjid.data.local_database.dao.StudentDao
 import com.example.umarmasjid.data.local_database.dao.SyncCursorDao
 import com.example.umarmasjid.util.Constants.UMAR_MASJID_DATABASE
@@ -96,5 +97,8 @@ abstract class DatabaseModule {
 
         @Provides
         fun provideSyncState(db: AppDatabase): SyncCursorDao = db.syncCursorDao()
+
+        @Provides
+        fun providePrayerTimesDao(db: AppDatabase): PrayerTimesDao = db.prayerTimesDao()
     }
 }

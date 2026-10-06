@@ -3,6 +3,7 @@ package com.example.umarmasjid.data.local_database
 import androidx.room.TypeConverter
 import com.example.umarmasjid.data.local_database.model.AttendanceStatus
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 class Converters {
@@ -27,4 +28,12 @@ class Converters {
     fun toAttendanceStatus(value: String?): AttendanceStatus? {
         return value?.let { AttendanceStatus.valueOf(it) }
     }
+
+    @TypeConverter
+    fun fromLocalTime(value: LocalTime?): String? =
+        value?.toString()
+
+    @TypeConverter
+    fun toLocalTime(value: String?): LocalTime? =
+        value?.let(LocalTime::parse)
 }
