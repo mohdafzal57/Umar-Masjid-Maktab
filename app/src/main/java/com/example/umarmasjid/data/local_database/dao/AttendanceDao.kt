@@ -104,6 +104,30 @@ interface AttendanceDao {
         endDateExclusive: LocalDate
     ): Flow<List<AttendanceEntity>>
 
+    @Query(
+        """
+    SELECT
+        (
+            CAST(
+                SUM(
+                    CASE
+                        WHEN attendance_status IN ('PRESENT', 'LATE') THEN 1
+                        ELSE 0
+                    END
+                ) AS FLOAT
+            ) * 100
+        ) / NULLIF(COUNT(*), 0)
+    FROM attendances
+    WHERE attendance_date >= :start
+      AND attendance_date < :endExclusive
+      AND deleted_at IS NULL
+    """
+    )
+    fun getAttendancePercentageForRange(
+        start: LocalDate,
+        endExclusive: LocalDate
+    ): Flow<Float?>
+
     // It gives all student list with their attendance status for the given date.
     @Query("""
     SELECT 

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -28,15 +29,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,12 +56,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 // ─── Islamic Date Card ────────────────────────────────────────────────────────
@@ -399,6 +413,7 @@ fun GridMini(color: Color) {
     }
 }
 
+
 @Composable
 fun AttendanceTrendChart(
     points: List<AttendancePoint>,
@@ -406,6 +421,9 @@ fun AttendanceTrendChart(
     onPeriodSelected: (AttendancePeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // State to control the dropdown menu visibility
+    var expanded by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -426,23 +444,65 @@ fun AttendanceTrendChart(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh
-                ) {
-                    Text(
-                        text = selectedPeriod.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    )
+
+                // Dropdown anchor and menu
+                Box {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable { expanded = true }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = selectedPeriod.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Select Period",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        AttendancePeriod.entries.forEach { period ->
+                            DropdownMenuItem(
+                                text = { Text(period.label) },
+                                onClick = {
+                                    onPeriodSelected(period)
+                                    expanded = false
+                                },
+                                trailingIcon = if (period == selectedPeriod) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Selected",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else null
+                            )
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
+
             AttendanceLineChart(
                 points = points,
-                yMin = 90,
-                yMax = 100,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
@@ -451,17 +511,42 @@ fun AttendanceTrendChart(
     }
 }
 
+
 @Composable
-private fun AttendanceLineChart(
+fun AttendanceLineChart(
     points: List<AttendancePoint>,
-    yMin: Int,
-    yMax: Int,
     modifier: Modifier = Modifier,
 ) {
-    if (points.isEmpty()) return
+    if (points.isEmpty()) {
+        Box(modifier = modifier, contentAlignment = androidx.compose.ui.Alignment.Center) {
+            Text("No attendance data available", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
 
-    val yLabels = (yMin..yMax).toList()
-    val yRange = (yMax - yMin).toFloat()
+    // Dynamic Y-Axis bounds calculation
+    val minPercentage = points.minOfOrNull { it.percentage } ?: 0f
+    val maxPercentage = points.maxOfOrNull { it.percentage } ?: 100f
+
+    // Snap min/max to nearest 10s for clean labels, ensuring at least a 20% gap
+    val yMin = (minPercentage - 10f).coerceAtLeast(0f).roundToInt() / 10 * 10
+    val yMax = (maxPercentage + 10f).coerceAtMost(100f).roundToInt() / 10 * 10
+    val finalYMax = if (yMax == yMin) (yMin + 20).coerceAtMost(100) else yMax
+
+    val yLabels = listOf(yMin, yMin + (finalYMax - yMin) / 2, finalYMax)
+    val yRange = (finalYMax - yMin).toFloat().coerceAtLeast(1f)
+
+    // Animation for line drawing
+    var animationTriggered by remember { mutableStateOf(false) }
+    val animationProgress by animateFloatAsState(
+        targetValue = if (animationTriggered) 1f else 0f,
+        animationSpec = tween(durationMillis = 1000),
+        label = "ChartAnimation"
+    )
+
+    LaunchedEffect(points) {
+        animationTriggered = true
+    }
 
     val textMeasurer = rememberTextMeasurer()
     val labelStyle = MaterialTheme.typography.labelSmall.copy(
@@ -471,115 +556,111 @@ private fun AttendanceLineChart(
     val outlineColor = MaterialTheme.colorScheme.outlineVariant
 
     Canvas(modifier = modifier) {
-        val yLabelWidth = 28.dp.toPx()
-        val xAxisHeight = 20.dp.toPx()
-        val chartLeft = yLabelWidth + 4.dp.toPx()
+        val yLabelWidth = 32.dp.toPx()
+        val xAxisHeight = 24.dp.toPx()
+        val chartLeft = yLabelWidth + 8.dp.toPx()
         val chartRight = size.width
-        val chartTop = 0f
+        val chartTop = 16.dp.toPx()
         val chartBottom = size.height - xAxisHeight
         val chartWidth = chartRight - chartLeft
         val chartHeight = chartBottom - chartTop
 
+        // 1. Draw Y-Axis Labels & Grid Lines
         yLabels.forEach { value ->
             val fraction = (value - yMin).toFloat() / yRange
             val y = chartBottom - fraction * chartHeight
 
             drawLine(
-                color = outlineColor.copy(alpha = 0.5f),
+                color = outlineColor.copy(alpha = 0.3f),
                 start = Offset(chartLeft, y),
-                end = Offset(chartRight - 4.dp.toPx(), y),
-                strokeWidth = 0.8.dp.toPx(),
+                end = Offset(chartRight, y),
+                strokeWidth = 1.dp.toPx(),
+                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                    floatArrayOf(10f, 10f)
+                )
             )
 
-            val measured = textMeasurer.measure(value.toString(), labelStyle)
+            val measured = textMeasurer.measure("${value}%", labelStyle)
             drawText(
                 textLayoutResult = measured,
                 topLeft = Offset(
-                    x = yLabelWidth - measured.size.width - 4.dp.toPx(),
+                    x = yLabelWidth - measured.size.width,
                     y = y - measured.size.height / 2f,
                 ),
             )
         }
 
+        // 2. Calculate coordinates
         val xStep = chartWidth / (points.size - 1).coerceAtLeast(1)
         val coords = points.mapIndexed { i, p ->
             val x = chartLeft + i * xStep
             val fraction = (p.percentage - yMin) / yRange
-            val y = chartBottom - fraction.coerceIn(0f, 1f) * chartHeight
+            // Use animation progress to grow points from the bottom
+            val animatedFraction = fraction * animationProgress
+            val y = chartBottom - animatedFraction.coerceIn(0f, 1f) * chartHeight
             Offset(x, y)
         }
 
+        // 3. Draw X-Axis Labels
         points.forEachIndexed { i, p ->
             val measured = textMeasurer.measure(p.day, labelStyle)
+            // Prevent text overlapping on edges
+            val xOffset = when (i) {
+                0 -> coords[i].x
+                points.lastIndex -> coords[i].x - measured.size.width
+                else -> coords[i].x - measured.size.width / 2f
+            }
             drawText(
                 textLayoutResult = measured,
-                topLeft = Offset(
-                    x = coords[i].x - measured.size.width / 2f,
-                    y = chartBottom + 6.dp.toPx(),
-                ),
+                topLeft = Offset(x = xOffset, y = chartBottom + 8.dp.toPx()),
             )
         }
 
-        fun smoothPath(pts: List<Offset>): Path = Path().apply {
-            if (pts.size < 2) return@apply
-            moveTo(pts.first().x, pts.first().y)
-            for (i in 0 until pts.size - 1) {
-                val cur = pts[i]
-                val next = pts[i + 1]
-                val cpX1 = cur.x + (next.x - cur.x) / 2f
-                val cpX2 = next.x - (next.x - cur.x) / 2f
-                cubicTo(cpX1, cur.y, cpX2, next.y, next.x, next.y)
+        // 4. Draw Line & Gradient Fill
+        if (coords.size > 1) {
+            val linePath = Path().apply {
+                moveTo(coords.first().x, coords.first().y)
+                for (i in 0 until coords.size - 1) {
+                    val cur = coords[i]
+                    val next = coords[i + 1]
+                    val cpX = cur.x + (next.x - cur.x) / 2f
+                    cubicTo(cpX, cur.y, cpX, next.y, next.x, next.y)
+                }
             }
-        }
 
-        val linePath = smoothPath(coords)
+            val fillPath = Path().apply {
+                addPath(linePath)
+                lineTo(coords.last().x, chartBottom)
+                lineTo(coords.first().x, chartBottom)
+                close()
+            }
 
-        val fillPath = Path().apply {
-            addPath(linePath)
-            lineTo(coords.last().x, chartBottom)
-            lineTo(coords.first().x, chartBottom)
-            close()
-        }
-        drawPath(
-            path = fillPath,
-            brush = Brush.verticalGradient(
-                colors = listOf(primaryColor.copy(alpha = 0.25f), Color.Transparent),
-                startY = chartTop, endY = chartBottom,
-            ),
-        )
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(primaryColor.copy(alpha = 0.3f), Color.Transparent),
+                    startY = chartTop, endY = chartBottom,
+                ),
+            )
 
-        drawPath(
-            path = linePath,
-            color = primaryColor,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                width = 2.5.dp.toPx(),
-                cap = StrokeCap.Round,
-                join = androidx.compose.ui.graphics.StrokeJoin.Round,
-            ),
-        )
-
-        val dashOn = 4.dp.toPx()
-        val dashOff = 3.dp.toPx()
-        coords.forEach { offset ->
-            drawLine(
-                color = primaryColor.copy(alpha = 0.3f),
-                start = Offset(offset.x, offset.y + 4.dp.toPx()),
-                end = Offset(offset.x, chartBottom),
-                strokeWidth = 1.dp.toPx(),
-                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                    intervals = floatArrayOf(dashOn, dashOff),
-                    phase = 0f,
+            drawPath(
+                path = linePath,
+                color = primaryColor,
+                style = Stroke(
+                    width = 3.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round,
                 ),
             )
         }
 
+        // 5. Draw Points
         coords.forEach { offset ->
-            drawCircle(color = primaryColor, radius = 4.5.dp.toPx(), center = offset)
-            drawCircle(color = Color.White, radius = 2.5.dp.toPx(), center = offset)
+            drawCircle(color = Color.White, radius = 5.dp.toPx(), center = offset)
+            drawCircle(color = primaryColor, radius = 3.dp.toPx(), center = offset)
         }
     }
 }
-
 // ─── Student Entry Row ────────────────────────────────────────────────────────
 
 @Composable
