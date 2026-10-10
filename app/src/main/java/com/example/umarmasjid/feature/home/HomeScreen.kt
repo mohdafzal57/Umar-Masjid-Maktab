@@ -178,7 +178,11 @@ private fun HomeHeader(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 16.dp)
+                ) {
                     Text(
                         text = state.greeting,
                         style = MaterialTheme.typography.headlineMedium,

@@ -29,13 +29,15 @@ class HomeViewModel @Inject constructor(
     private val dashboard =
         observeHomeDashboard(attendancePeriod)
 
-    private val prayer =
-        observeTodayPrayer()
-            .map { entity ->
-                entity?.let(PrayerTimeUiMapper::map)
-                    ?: PrayerResult()
-            }
+    private val prayer = observeTodayPrayer().map { entity ->
+        entity?.let(PrayerTimeUiMapper::map) ?: PrayerResult()
+    }
 
+    /** [Remember]
+     * The combine operator waits for every single flow to produce an initial emission:
+     * If three of them emit instantly but one is waiting on a slow network request
+     * or database query, combine will wait.
+     */
     val state: StateFlow<HomeUiState> = combine(
         settings.settings,
         dashboard,
