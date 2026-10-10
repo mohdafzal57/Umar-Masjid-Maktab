@@ -65,20 +65,7 @@ class SupabaseRemoteDataSource @Inject constructor(
             .decodeList<SyncChangeDto>()
     }
 
-    suspend inline fun <reified T: Any> getById(
-        tableName: String,
-        id: String
-    ): T? {
-        return supabase
-            .from(tableName)
-            .select {
-                filter {
-                    eq(ID, id)
-                }
-            }
-            .decodeList<T>()
-            .firstOrNull()
-    }
+
 
     suspend inline fun <reified T: Any> getByIds(
         tableName: String,
@@ -94,16 +81,6 @@ class SupabaseRemoteDataSource @Inject constructor(
             .decodeList<T>()
     }
 
-    suspend inline fun <reified T : Any> upsert(
-        tableName: String,
-        value: T,
-        onConflict: String? = null
-    ) {
-        supabase.from(tableName).upsert(value) {
-            onConflict?.let { this.onConflict = it }
-        }
-    }
-
     suspend inline fun <reified T : Any> upsertAll(
         tableName: String,
         values: List<T>,
@@ -111,20 +88,6 @@ class SupabaseRemoteDataSource @Inject constructor(
     ) {
         supabase.from(tableName).upsert(values) {
             onConflict?.let { this.onConflict = it }
-        }
-    }
-
-
-    suspend inline fun <reified T : Any, reified V : Any> updateByColumn(
-        tableName: String,
-        columnName: String,
-        value: V,
-        updateData: T
-    ) {
-        supabase.from(tableName).update(updateData) {
-            filter {
-                eq(columnName, value)
-            }
         }
     }
 
@@ -143,18 +106,6 @@ class SupabaseRemoteDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteByColumn(
-        tableName: String,
-        columnName: String,
-        value: Any
-    ) {
-        supabase.from(tableName).delete {
-            filter {
-                eq(columnName, value)
-            }
-        }
-    }
-
     suspend fun softDeleteStudents(
         studentIds: List<String>,
         timestamp: String
@@ -168,6 +119,56 @@ class SupabaseRemoteDataSource @Inject constructor(
             function = RPC_SOFT_DELETE_STUDENTS,
             parameters = parameters
         )
+    }
+
+    suspend inline fun <reified T: Any> getById(
+        tableName: String,
+        id: String
+    ): T? {
+        return supabase
+            .from(tableName)
+            .select {
+                filter {
+                    eq(ID, id)
+                }
+            }
+            .decodeList<T>()
+            .firstOrNull()
+    }
+
+    suspend inline fun <reified T : Any> upsert(
+        tableName: String,
+        value: T,
+        onConflict: String? = null
+    ) {
+        supabase.from(tableName).upsert(value) {
+            onConflict?.let { this.onConflict = it }
+        }
+    }
+
+    suspend fun deleteByColumn(
+        tableName: String,
+        columnName: String,
+        value: Any
+    ) {
+        supabase.from(tableName).delete {
+            filter {
+                eq(columnName, value)
+            }
+        }
+    }
+
+    suspend inline fun <reified T : Any, reified V : Any> updateByColumn(
+        tableName: String,
+        columnName: String,
+        value: V,
+        updateData: T
+    ) {
+        supabase.from(tableName).update(updateData) {
+            filter {
+                eq(columnName, value)
+            }
+        }
     }
 
     companion object {

@@ -12,4 +12,10 @@ interface RemotePrayerTimesDataSource {
         month: Int,
         prayerSettings: PrayerSettings
     ): Result<PrayerTimesResponseDto, NetworkError>
+
+    suspend fun getPrayerTimesRange(
+        startDate: String,
+        endDate: String,
+        prayerSettings: PrayerSettings
+    ): Result<PrayerTimesResponseDto, NetworkError>
 }

@@ -40,7 +40,7 @@ class DebouncedSyncManager @Inject constructor(
     }
 
     override fun cancelAllSyncs() {
-        workManager.cancelAllWork()
+        workManager.cancelUniqueWork("SyncOutboxWork")
     }
 
     private fun scheduleWork() {

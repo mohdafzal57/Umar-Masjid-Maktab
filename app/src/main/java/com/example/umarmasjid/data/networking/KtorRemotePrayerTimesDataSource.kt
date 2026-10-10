@@ -76,6 +76,69 @@ class KtorRemotePrayerTimesDataSource @Inject constructor(
             }
         }
     }
+
+    override suspend fun getPrayerTimesRange(
+        startDate: String,
+        endDate: String,
+        prayerSettings: PrayerSettings
+    ): Result<PrayerTimesResponseDto, NetworkError> {
+        println("RANGE_PRAYERS: Getting prayer times from $startDate to $endDate")
+
+        return safeCall {
+
+            val useCoordinates =
+                prayerSettings.latitude != null &&
+                        prayerSettings.longitude != null
+
+            val endpoint = if (useCoordinates) {
+                "calendar/from/$startDate/to/$endDate"
+            } else {
+                "calendarByCity/from/$startDate/to/$endDate"
+            }
+
+            val url = constructUrl(endpoint)
+
+            httpClient.get(url) {
+
+                if (useCoordinates) {
+
+                    parameter("latitude", prayerSettings.latitude)
+                    parameter("longitude", prayerSettings.longitude)
+
+                } else {
+
+                    val (city, country) = resolveCityCountry(prayerSettings)
+
+                    parameter("city", city)
+                    parameter("country", country)
+                }
+
+                // ---- COMMON PARAMETERS ----
+                parameter("method", prayerSettings.method)
+                parameter("school", prayerSettings.school)
+                parameter("midnightMode", prayerSettings.midnightMode)
+                parameter("calendarMethod", prayerSettings.calendarMethod)
+                parameter("timezonestring", prayerSettings.timezone)
+                parameter("iso8601", prayerSettings.iso8601)
+
+                prayerSettings.latitudeAdjustmentMethod?.let {
+                    parameter("latitudeAdjustmentMethod", it)
+                }
+
+                prayerSettings.shafaq?.let {
+                    parameter("shafaq", it)
+                }
+
+                prayerSettings.tune?.let {
+                    parameter("tune", it)
+                }
+
+                prayerSettings.adjustment?.let {
+                    parameter("adjustment", it)
+                }
+            }
+        }
+    }
 }
 
 val countryCityMap = mapOf(

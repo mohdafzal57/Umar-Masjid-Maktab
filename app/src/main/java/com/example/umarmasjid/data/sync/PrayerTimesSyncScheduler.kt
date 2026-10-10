@@ -1,6 +1,6 @@
 package com.example.umarmasjid.data.sync
 
-import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
@@ -9,60 +9,60 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object PrayerTimesSyncScheduler {
-
-    private const val PERIODIC_WORK_NAME =
-        "prayer_times_periodic_sync"
-
-    private const val INITIAL_WORK_NAME =
-        "prayer_times_initial_sync"
-
-    fun ensureScheduled(context: Context) {
-        scheduleInitialSync(context)
-        schedulePeriodicSync(context)
+@Singleton
+class PrayerTimesSyncScheduler @Inject constructor(
+    private val workManager: WorkManager
+) {
+    companion object {
+        private const val INITIAL_SYNC = "prayer_times_initial_sync"
+        private const val PERIODIC_SYNC = "prayer_times_periodic_sync"
     }
 
-    private fun scheduleInitialSync(context: Context) {
+    private fun constraints() = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
 
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
+    fun requestInitialSync() {
+        val request = OneTimeWorkRequestBuilder<PrayerTimesSyncWorker>()
+            .setConstraints(constraints())
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                30,
+                TimeUnit.SECONDS
+            )
             .build()
 
-        val request =
-            OneTimeWorkRequestBuilder<PrayerTimesSyncWorker>()
-                .setConstraints(constraints)
-                .build()
-
-        WorkManager
-            .getInstance(context)
-            .enqueueUniqueWork(
-                INITIAL_WORK_NAME,
-                ExistingWorkPolicy.KEEP,
-                request
-            )
+        workManager.enqueueUniqueWork(
+            INITIAL_SYNC,
+            ExistingWorkPolicy.KEEP,
+            request
+        )
     }
 
-    private fun schedulePeriodicSync(context: Context) {
-
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
+    fun ensurePeriodicSyncScheduled() {
+        val request = PeriodicWorkRequestBuilder<PrayerTimesSyncWorker>(
+            24, TimeUnit.HOURS
+        )
+            .setConstraints(constraints())
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                30,
+                TimeUnit.SECONDS
+            )
             .build()
 
-        val request =
-            PeriodicWorkRequestBuilder<PrayerTimesSyncWorker>(
-                24,
-                TimeUnit.HOURS
-            )
-                .setConstraints(constraints)
-                .build()
+        workManager.enqueueUniquePeriodicWork(
+            PERIODIC_SYNC,
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
+    }
 
-        WorkManager
-            .getInstance(context)
-            .enqueueUniquePeriodicWork(
-                PERIODIC_WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
-                request
-            )
+    fun cancelPrayerTimesSync() {
+        workManager.cancelUniqueWork(INITIAL_SYNC)
+        workManager.cancelUniqueWork(PERIODIC_SYNC)
     }
 }

@@ -6,6 +6,7 @@ import com.example.umarmasjid.core.data.networking.safeAuthCall
 import com.example.umarmasjid.core.domain.util.EmptyResult
 import com.example.umarmasjid.core.domain.util.SupabaseAuthError
 import com.example.umarmasjid.data.local_database.AppDatabase
+import com.example.umarmasjid.data.sync.PrayerTimesSyncScheduler
 import com.example.umarmasjid.data.sync.SyncManager
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
@@ -27,7 +28,8 @@ import javax.inject.Singleton
 class SupabaseAuthRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val syncManager: SyncManager,
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val prayerTimesSyncScheduler: PrayerTimesSyncScheduler
 ) : AuthRepository {
 
     override val teacherId: String
@@ -56,6 +58,8 @@ class SupabaseAuthRepository @Inject constructor(
                 this.password = password
             }
             syncManager.requestSync()
+            prayerTimesSyncScheduler.requestInitialSync()
+            prayerTimesSyncScheduler.ensurePeriodicSyncScheduled()
         }
     }
 
@@ -115,6 +119,7 @@ class SupabaseAuthRepository @Inject constructor(
 
     override suspend fun logout() {
         syncManager.cancelAllSyncs()
+        prayerTimesSyncScheduler.cancelPrayerTimesSync()
 
         try {
             supabase.auth.signOut()

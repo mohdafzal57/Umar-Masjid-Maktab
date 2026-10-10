@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
-import androidx.work.WorkManager
 import com.example.umarmasjid.core.data.preferences.DataStorePrayerSettingsPreferences
 import com.example.umarmasjid.core.data.preferences.DataStoreSystemSettingsPreferences
 import com.example.umarmasjid.core.data.preferences.PrayerSettingsPreferences
@@ -88,12 +87,6 @@ abstract class DatabaseModule {
 
         @Provides
         fun provideSyncOperationDao(db: AppDatabase) = db.syncOperationDao()
-
-        @Provides
-        @Singleton
-        fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
-            return WorkManager.getInstance(context)
-        }
 
         @Provides
         fun provideSyncState(db: AppDatabase): SyncCursorDao = db.syncCursorDao()

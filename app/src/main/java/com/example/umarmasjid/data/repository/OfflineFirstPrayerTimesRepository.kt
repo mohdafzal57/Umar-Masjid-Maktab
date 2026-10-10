@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 class OfflineFirstPrayerTimesRepository @Inject constructor(
@@ -31,21 +33,22 @@ class OfflineFirstPrayerTimesRepository @Inject constructor(
 
     override suspend fun syncCurrentAndNextMonth() {
         val now = LocalDate.now()
-        syncMonth(YearMonth.from(now))
-        syncMonth(YearMonth.from(now).plusMonths(1))
-        local.deleteOlderThan(now.minusMonths(2).withDayOfMonth(1))
-    }
 
-    private suspend fun syncMonth(month: YearMonth) {
-        val start = month.atDay(1)
-        val end = month.plusMonths(1).atDay(1)
-        val expected = month.lengthOfMonth()
-        if (local.countTimes(start, end) == expected) return
+        val currentMonth = YearMonth.from(now)
+        val start = currentMonth.atDay(1)
+        val endExclusive = currentMonth.plusMonths(2).atDay(1)
+        val expected = ChronoUnit.DAYS.between(start, endExclusive).toInt()
+
+        if (local.countTimes(start, endExclusive) == expected) return
 
         val settings = preferences.settings.first()
-        val result = remote.getMonthlyPrayerTimes(
-            year = month.year,
-            month = month.monthValue,
+
+        val apiDateFormatter =
+            DateTimeFormatter.ofPattern(API_DATE_FORMATTER)
+
+        val result = remote.getPrayerTimesRange(
+            startDate = start.format(apiDateFormatter),
+            endDate = endExclusive.minusDays(1).format(apiDateFormatter),
             prayerSettings = settings,
         )
 
@@ -53,5 +56,11 @@ class OfflineFirstPrayerTimesRepository @Inject constructor(
             val fetchedAt = System.currentTimeMillis()
             local.upsertAll(days.data.map { it.toEntity(fetchedAt) })
         }
+
+        local.deleteOlderThan(now.minusMonths(2).withDayOfMonth(1))
+    }
+
+    companion object {
+        const val API_DATE_FORMATTER = "dd-MM-yyyy"
     }
 }
