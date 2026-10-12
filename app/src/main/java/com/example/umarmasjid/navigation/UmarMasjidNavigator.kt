@@ -42,6 +42,10 @@ class UmarMasjidNavigator(
             is Connected -> {
                 if (route in state.backStacks.keys) {
                     state.topLevelRoute = route
+                }
+                // TODO: See rootSection (line 66)
+                else if (route is ConnectedRoute.StudentPaymentRoute) {
+                    state.backStacks[state.topLevelRoute]?.addSingleDetail(route)
                 } else {
                     state.backStacks[state.topLevelRoute]?.add(route)
                 }

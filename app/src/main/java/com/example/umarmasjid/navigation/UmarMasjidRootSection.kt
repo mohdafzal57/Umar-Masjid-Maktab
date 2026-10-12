@@ -1,6 +1,8 @@
 package com.example.umarmasjid.navigation
 
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
@@ -28,21 +30,27 @@ fun EntryProviderScope<NavKey>.rootSection(
     }
 
     entry<ConnectedRoute> {
-        NavDisplay(
-            entries = navigator.state.toDecoratedEntries(
-                entryProvider = entryProvider {
-                    homeEntry(navigator)
-                    attendanceEntry(navigator)
-                    studentEntry(navigator)
-                    paymentsEntry(navigator)
-                    studentPaymentEntry(navigator)
-                    attendanceBarChartEntry(navigator)
+        val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
+
+        SharedTransitionLayout {
+            NavDisplay(
+                entries = navigator.state.toDecoratedEntries(
+                    entryProvider = entryProvider {
+                        homeEntry(navigator)
+                        attendanceEntry(navigator)
+                        studentEntry(navigator)
+                        paymentsEntry(navigator)
+                        studentPaymentEntry(navigator)
+                        attendanceBarChartEntry(navigator)
+                    }
+                ),
+                sceneStrategies = listOf(listDetailStrategy),
+                sharedTransitionScope = this,
+                onBack = {
+                    navigator.goBack()
                 }
-            ),
-            onBack = {
-                navigator.goBack()
-            }
-        )
+            )
+        }
     }
 }
 
@@ -53,4 +61,19 @@ fun EntryProviderScope<NavKey>.authenticationSection(
     signupEntry(navigator)
     resetPasswordEntry(navigator)
     updatePasswordEntry(navigator)
+}
+
+//private fun NavBackStack<NavKey>.addDetail(detailRoute: ConnectedRoute.StudentPaymentRoute) {
+//
+//    // Remove any existing detail routes before adding this detail route.
+//    // In certain scenarios, such as when multiple detail panes can be shown at once, it may
+//    // be desirable to keep existing detail routes on the back stack.
+//    removeIf { it is ConnectedRoute.StudentPaymentRoute }
+//    add(detailRoute)
+//}
+
+inline fun <reified T : NavKey>
+        NavBackStack<NavKey>.addSingleDetail(route: T) {
+    removeAll { it is T }
+    add(route)
 }

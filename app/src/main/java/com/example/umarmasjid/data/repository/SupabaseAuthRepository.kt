@@ -5,6 +5,7 @@ import android.net.Uri
 import com.example.umarmasjid.core.data.networking.safeAuthCall
 import com.example.umarmasjid.core.domain.util.EmptyResult
 import com.example.umarmasjid.core.domain.util.SupabaseAuthError
+import com.example.umarmasjid.core.domain.util.onSuccess
 import com.example.umarmasjid.data.local_database.AppDatabase
 import com.example.umarmasjid.data.sync.PrayerTimesSyncScheduler
 import com.example.umarmasjid.data.sync.SyncManager
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
 
 @Singleton
 class SupabaseAuthRepository @Inject constructor(
@@ -44,9 +46,15 @@ class SupabaseAuthRepository @Inject constructor(
             _isPasswordRecovery
         ) { sessionStatus, isPasswordRecovery ->
             when {
-                isPasswordRecovery -> AuthState.PasswordRecovery
-                sessionStatus is SessionStatus.Initializing -> AuthState.Loading
-                sessionStatus is SessionStatus.Authenticated -> AuthState.Authenticated
+                sessionStatus is SessionStatus.Initializing ->
+                    AuthState.Loading
+
+                isPasswordRecovery ->
+                    AuthState.PasswordRecovery
+
+                sessionStatus is SessionStatus.Authenticated ->
+                    AuthState.Authenticated
+
                 else -> AuthState.Unauthenticated
             }
         }.distinctUntilChanged()
@@ -89,22 +97,36 @@ class SupabaseAuthRepository @Inject constructor(
             supabase.auth.updateUser {
                 password = newPassword
             }
+        }.onSuccess {
+            // finished Password recovery
+            _isPasswordRecovery.value = false
+            // Need to find a better way to call these things,
+            // Is this a right approach to call these again here?
+            syncManager.requestSync()
+            prayerTimesSyncScheduler.requestInitialSync()
+            prayerTimesSyncScheduler.ensurePeriodicSyncScheduled()
         }
-    }
-
-    override fun finishPasswordRecovery() {
-        _isPasswordRecovery.value = false
     }
 
     override suspend fun handleDeeplink(intent: Intent) {
         val uri = intent.data ?: return
-        if (uri.isRecoveryLink()) {
-            _isPasswordRecovery.value = true
+        val isRecoveryLink = uri.isRecoveryLink()
+
+        try {
+            supabase.handleDeeplinks(
+                intent = intent,
+                onSessionSuccess = {}
+            )
+            if (isRecoveryLink) {
+                _isPasswordRecovery.value = true
+            }
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _isPasswordRecovery.value = false
+            throw e
         }
-        supabase.handleDeeplinks(
-            intent = intent,
-            onSessionSuccess = {}
-        )
     }
 
     private fun Uri.isRecoveryLink(): Boolean {
@@ -123,6 +145,8 @@ class SupabaseAuthRepository @Inject constructor(
 
         try {
             supabase.auth.signOut()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Log the remote sign-out failure.
         } finally {

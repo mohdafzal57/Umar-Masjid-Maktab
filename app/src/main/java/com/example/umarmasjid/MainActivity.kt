@@ -12,24 +12,11 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.umarmasjid.app.SplashScreen
 import com.example.umarmasjid.app.UmarMasjidRoot
 import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
@@ -75,33 +62,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            if (authState !is AuthState.Loading) {
+            if (authState is AuthState.Loading) {
+                SplashScreen()
+            } else {
                 UmarMasjidTheme(darkMode) {
                     UmarMasjidRoot(authState)
-                }
-            } else {
-                UmarMasjidTheme {
-                    Scaffold { innerPadding ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.umar_masjid_ic),
-                                contentDescription = "umar_masjid_icon"
-                            )
-                            Spacer(
-                                modifier = Modifier.padding(10.dp),
-                            )
-                            Text(
-                                text = "Loading...",
-                                fontSize = TextUnit(20f, TextUnitType(20))
-                            )
-                        }
-                    }
                 }
             }
         }

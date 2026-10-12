@@ -1,20 +1,18 @@
 package com.example.umarmasjid
 
 import android.content.Intent
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation3.runtime.NavKey
 import com.example.umarmasjid.core.data.preferences.PrayerSettingsPreferences
 import com.example.umarmasjid.core.data.preferences.SystemSettingsPreferences
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.domain.repository.LocationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,6 +28,10 @@ class MainActivityViewModel @Inject constructor(
 
     val authState: StateFlow<AuthState> =
         authRepository.authState
+            .catch { e ->
+                Log.e("AuthViewModel", "Auth state failed", e)
+                emit(AuthState.Unauthenticated)
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
@@ -67,9 +69,5 @@ class MainActivityViewModel @Inject constructor(
         viewModelScope.launch {
             locationRepository.fetchAndSaveCurrentLocation()
         }
-    }
-
-    fun finishPasswordRecovery() {
-        authRepository.finishPasswordRecovery()
     }
 }

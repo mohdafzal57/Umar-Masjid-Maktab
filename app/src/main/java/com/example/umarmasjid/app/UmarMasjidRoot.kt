@@ -29,10 +29,6 @@ import com.example.umarmasjid.navigation.rootSection
 @Composable
 fun UmarMasjidRoot(authState: AuthState) {
 
-    if (authState == AuthState.Loading) {
-        return
-    }
-
     val initialRootRoute = remember(authState) {
         // If they click a recovery link while closed, we need to start in Auth
         if (authState == AuthState.Authenticated) ConnectedRoute else AuthenticationRoute

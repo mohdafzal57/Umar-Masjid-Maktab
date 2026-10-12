@@ -19,7 +19,6 @@ interface AuthRepository {
     suspend fun signUp(email: String, password: String): EmptyResult<SupabaseAuthError>
     suspend fun resetPassword(email: String): EmptyResult<SupabaseAuthError>
     suspend fun updatePassword(newPassword: String): EmptyResult<SupabaseAuthError>
-    fun finishPasswordRecovery()
     suspend fun handleDeeplink(intent: Intent)
     suspend fun logout()
 }

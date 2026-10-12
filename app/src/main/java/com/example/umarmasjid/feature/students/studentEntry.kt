@@ -6,10 +6,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.example.umarmasjid.navigation.ConnectedRoute
+import com.example.umarmasjid.navigation.ListDetailScene
 import com.example.umarmasjid.navigation.UmarMasjidNavigator
 
 fun EntryProviderScope<NavKey>.studentEntry(navigator: UmarMasjidNavigator) {
-    entry<ConnectedRoute.StudentRoute> {
+    entry<ConnectedRoute.StudentRoute>(
+        metadata = ListDetailScene.listPane(),
+    ) {
         val viewModel: StudentProfileViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         StudentScreen(
