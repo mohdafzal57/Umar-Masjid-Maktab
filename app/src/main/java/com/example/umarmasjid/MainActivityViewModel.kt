@@ -10,13 +10,16 @@ import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.domain.repository.LocationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
@@ -28,6 +31,11 @@ class MainActivityViewModel @Inject constructor(
 
     val authState: StateFlow<AuthState> =
         authRepository.authState
+            .onStart {
+                // Auth state changes instantly
+                // this displays the splash screen for 1.5 seconds
+                delay(1500.milliseconds)
+            }
             .catch { e ->
                 Log.e("AuthViewModel", "Auth state failed", e)
                 emit(AuthState.Unauthenticated)

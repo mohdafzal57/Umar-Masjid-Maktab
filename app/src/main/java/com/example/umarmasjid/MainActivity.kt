@@ -12,6 +12,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
@@ -62,11 +63,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            if (authState is AuthState.Loading) {
-                SplashScreen()
-            } else {
-                UmarMasjidTheme(darkMode) {
-                    UmarMasjidRoot(authState)
+            UmarMasjidTheme(darkMode) {
+                Crossfade(
+                    targetState = authState is AuthState.Loading,
+                    label = "splash_to_root",
+                ) { isLoading ->
+                    if (isLoading) SplashScreen() else UmarMasjidRoot(authState)
                 }
             }
         }
