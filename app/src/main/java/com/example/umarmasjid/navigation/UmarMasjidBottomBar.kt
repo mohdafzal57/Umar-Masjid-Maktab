@@ -48,7 +48,7 @@ fun UmarMasjidBottomBar(
                 ShortNavigationBarItem(
                     colors = ShortNavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        selectedTextColorTopIconPosition = MaterialTheme.colorScheme.primary,
                         unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         unselectedTextColor = MaterialTheme.colorScheme.onSurface
                     ),

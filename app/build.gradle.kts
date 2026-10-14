@@ -95,6 +95,7 @@ dependencies {
     // Scene
     implementation(libs.material3.adaptive)
     implementation(libs.material3.adaptive.layout)
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.5.0-beta01")
 
     // Room
     implementation(libs.room.runtime)
@@ -123,4 +124,7 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("androidx.hilt:hilt-work:1.4.0")
     ksp(libs.androidx.hilt.compiler)
+
+    // Splash Screen
+    implementation("androidx.core:core-splashscreen:1.2.0")
 }

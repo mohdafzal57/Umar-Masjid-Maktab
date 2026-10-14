@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -20,7 +23,7 @@ import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.navigation.AuthenticationRoute
 import com.example.umarmasjid.navigation.ConnectedRoute
 import com.example.umarmasjid.navigation.TOP_LEVEL_NAV_ITEMS
-import com.example.umarmasjid.navigation.UmarMasjidBottomBar
+import com.example.umarmasjid.navigation.UmarMasjidNavigationSuiteScaffold
 import com.example.umarmasjid.navigation.UmarMasjidNavigator
 import com.example.umarmasjid.navigation.rememberUmarMasjidNavigationState
 import com.example.umarmasjid.navigation.rootSection
@@ -28,6 +31,9 @@ import com.example.umarmasjid.navigation.rootSection
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmarMasjidRoot(authState: AuthState) {
+
+    // Gate the Root Content until AuthState is Settled
+    if (authState == AuthState.Loading) return
 
     val initialRootRoute = remember(authState) {
         // If they click a recovery link while closed, we need to start in Auth
@@ -61,36 +67,75 @@ fun UmarMasjidRoot(authState: AuthState) {
         }
     }
 
-    val showBottomBar = navigationState.currentRootDestination == ConnectedRoute
+    val showNavigationSuite = navigationState.currentRootDestination == ConnectedRoute
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            if (showBottomBar) {
-                UmarMasjidBottomBar(
-                    currentTopLevelKey = navigationState.topLevelRoute,
-                    onNavigate = { navigator.navigate(it) }
-                )
+    if (showNavigationSuite) {
+        UmarMasjidNavigationSuiteScaffold(
+            navigationSuiteItems = {
+                TOP_LEVEL_NAV_ITEMS.forEach { (navKey, navItem) ->
+                    val selected = navKey == navigationState.topLevelRoute
+                    item(
+                        selected = selected,
+                        onClick = { navigator.navigate(navKey) },
+                        icon = {
+                            Icon(
+                                imageVector = navItem.unselectedIcon,
+                                contentDescription = navItem.title,
+                            )
+                        },
+                        selectedIcon = {
+                            Icon(
+                                imageVector = navItem.selectedIcon,
+                                contentDescription = navItem.title,
+                            )
+                        },
+                        label = { Text(navItem.title) },
+                        badge = navItem.badge?.let { badgeText ->
+                            {
+                                Badge { Text(badgeText) }
+                            }
+                        }
+                    )
+                }
             }
+        ) {
+            NavDisplay(
+                backStack = navigationState.rootBackStack,
+                entryProvider = entryProvider {
+                    rootSection(
+                        navigator = navigator
+                    )
+                },
+                modifier = Modifier
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Horizontal,
+                        ),
+                    )
+            )
         }
-    ) { innerPadding ->
-        NavDisplay(
-            backStack = navigationState.rootBackStack,
-            entryProvider = entryProvider {
-                rootSection(
-                    navigator = navigator
-                )
-            },
-            modifier = Modifier
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding)
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(
-                        WindowInsetsSides.Horizontal,
-                    ),
-                )
-        )
+    } else {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        ) { innerPadding ->
+            NavDisplay(
+                backStack = navigationState.rootBackStack,
+                entryProvider = entryProvider {
+                    rootSection(
+                        navigator = navigator
+                    )
+                },
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Horizontal,
+                        ),
+                    )
+            )
+        }
     }
 }

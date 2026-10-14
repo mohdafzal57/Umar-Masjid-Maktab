@@ -12,14 +12,12 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.umarmasjid.app.SplashScreen
 import com.example.umarmasjid.app.UmarMasjidRoot
-import com.example.umarmasjid.domain.repository.AuthState
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
@@ -41,11 +39,15 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         intent?.let { viewModel.handleIntent(it) }
 
         enableEdgeToEdge()
+        splashScreen.setKeepOnScreenCondition {
+            viewModel.shouldKeepSplashScreen()
+        }
         setContent {
             val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
             val isLocationInitialized by viewModel.isLocationInitialized.collectAsStateWithLifecycle()
@@ -64,12 +66,7 @@ class MainActivity : ComponentActivity() {
             }
 
             UmarMasjidTheme(darkMode) {
-                Crossfade(
-                    targetState = authState is AuthState.Loading,
-                    label = "splash_to_root",
-                ) { isLoading ->
-                    if (isLoading) SplashScreen() else UmarMasjidRoot(authState)
-                }
+                UmarMasjidRoot(authState)
             }
         }
     }
