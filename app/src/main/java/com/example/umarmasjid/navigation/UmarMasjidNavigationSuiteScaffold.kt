@@ -21,6 +21,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItemCo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScope
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -138,10 +139,11 @@ fun UmarMasjidNavigationSuiteScaffold(
     navigationSuiteItems: UmarMasjidNavigationSuiteScope.() -> Unit,
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfoV2(),
+    // 1. Expose layoutType with the adaptive calculation as default
+    layoutType: NavigationSuiteType = NavigationSuiteScaffoldDefaults
+        .calculateFromAdaptiveInfo(windowAdaptiveInfo),
     content: @Composable () -> Unit,
 ) {
-    val layoutType = NavigationSuiteScaffoldDefaults
-        .calculateFromAdaptiveInfo(windowAdaptiveInfo)
     val navigationSuiteItemColors = NavigationSuiteItemColors(
         navigationBarItemColors = NavigationBarItemDefaults.colors(
             selectedIconColor = UmarMasjidNavigationDefaults.navigationSelectedItemColor(),
@@ -172,7 +174,7 @@ fun UmarMasjidNavigationSuiteScaffold(
                 navigationSuiteItemColors = navigationSuiteItemColors,
             ).run(navigationSuiteItems)
         },
-        layoutType = layoutType,
+        layoutType = layoutType, // 2. Passes down either calculated type or NavigationSuiteType.None
         containerColor = Color.Transparent,
         navigationSuiteColors = NavigationSuiteDefaults.colors(
             navigationBarContentColor = UmarMasjidNavigationDefaults.navigationContentColor(),

@@ -67,7 +67,7 @@ fun UmarMasjidRoot(authState: AuthState) {
         }
     }
 
-    val showNavigationSuite = navigationState.currentRootDestination == ConnectedRoute
+    val showNavigationSuite = navigationState.currentRootDestination is ConnectedRoute
 
     if (showNavigationSuite) {
         UmarMasjidNavigationSuiteScaffold(
