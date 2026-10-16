@@ -12,6 +12,7 @@ import com.example.umarmasjid.data.sync.SyncManager
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -33,47 +34,54 @@ class SupabaseAuthRepository @Inject constructor(
     private val appDatabase: AppDatabase,
     private val prayerTimesSyncScheduler: PrayerTimesSyncScheduler
 ) : AuthRepository {
+    private val auth: Auth get() = supabase.auth
 
     override val teacherId: String
-        get() = supabase.auth.currentUserOrNull()?.id
+        get() = auth.currentUserOrNull()?.id
             ?: throw IllegalStateException("User not logged in")
 
     private val _isPasswordRecovery = MutableStateFlow(false)
 
     override val authState: Flow<AuthState> =
         combine(
-            supabase.auth.sessionStatus,
+            auth.sessionStatus,
             _isPasswordRecovery
         ) { sessionStatus, isPasswordRecovery ->
-            when {
-                sessionStatus is SessionStatus.Initializing ->
+            when (sessionStatus) {
+                is SessionStatus.Initializing -> AuthState.Loading
+                is SessionStatus.Authenticated -> {
+                    if (isPasswordRecovery) {
+                        AuthState.PasswordRecovery
+                    } else {
+                        AuthState.Authenticated
+                    }
+                }
+
+                is SessionStatus.RefreshFailure -> {
+                    // SessionStatus.RefreshFailure is transient while Supabase retries in the background.
+                    // Keep the user in Loading or retain their last status rather than instantly kicking to Unauthenticated.
                     AuthState.Loading
+                }
 
-                isPasswordRecovery ->
-                    AuthState.PasswordRecovery
-
-                sessionStatus is SessionStatus.Authenticated ->
-                    AuthState.Authenticated
-
-                else -> AuthState.Unauthenticated
+                is SessionStatus.NotAuthenticated -> {
+                    _isPasswordRecovery.value = false
+                    AuthState.Unauthenticated
+                }
             }
         }.distinctUntilChanged()
 
     override suspend fun login(email: String, password: String): EmptyResult<SupabaseAuthError> {
         return safeAuthCall {
-            supabase.auth.signInWith(Email) {
+            auth.signInWith(Email) {
                 this.email = email
                 this.password = password
             }
-            syncManager.requestSync()
-            prayerTimesSyncScheduler.requestInitialSync()
-            prayerTimesSyncScheduler.ensurePeriodicSyncScheduled()
         }
     }
 
     override suspend fun signUp(email: String, password: String): EmptyResult<SupabaseAuthError> {
         return safeAuthCall {
-            supabase.auth.signUpWith(Email) {
+            auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
             }
@@ -82,7 +90,7 @@ class SupabaseAuthRepository @Inject constructor(
 
     override suspend fun resetPassword(email: String): EmptyResult<SupabaseAuthError> {
         return safeAuthCall {
-            supabase.auth.resetPasswordForEmail(
+            auth.resetPasswordForEmail(
                 email = email,
                 redirectUrl = "umarmasjid://auth/callback"
             )
@@ -90,21 +98,17 @@ class SupabaseAuthRepository @Inject constructor(
     }
 
     override suspend fun updatePassword(newPassword: String): EmptyResult<SupabaseAuthError> {
-        check(_isPasswordRecovery.value) {
-            "Password recovery session is not active."
-        }
+        //todo: urgency + need to see here!!!
+//        if (!_isPasswordRecovery.value) {
+//            return EmptyResult.Failure(SupabaseAuthError.InvalidSession("Password recovery session is not active."))
+//        }
         return safeAuthCall {
-            supabase.auth.updateUser {
+            auth.updateUser {
                 password = newPassword
             }
         }.onSuccess {
             // finished Password recovery
             _isPasswordRecovery.value = false
-            // Need to find a better way to call these things,
-            // Is this a right approach to call these again here?
-            syncManager.requestSync()
-            prayerTimesSyncScheduler.requestInitialSync()
-            prayerTimesSyncScheduler.ensurePeriodicSyncScheduled()
         }
     }
 
@@ -144,14 +148,14 @@ class SupabaseAuthRepository @Inject constructor(
         prayerTimesSyncScheduler.cancelPrayerTimesSync()
 
         try {
-            supabase.auth.signOut()
+            auth.signOut()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             // Log the remote sign-out failure.
         } finally {
             try {
-                supabase.auth.clearSession()
+                auth.clearSession()
             } finally {
                 withContext(Dispatchers.IO) {
                     appDatabase.clearAllTables()

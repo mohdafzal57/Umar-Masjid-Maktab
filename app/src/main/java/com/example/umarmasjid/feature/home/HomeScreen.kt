@@ -219,7 +219,7 @@ private fun HomeHeader(
                 PrayerTimingsLoadingCard()
             } else {
                 IslamicDateCard(
-                    isDarkMode = state.isDarkMode,
+                    isDarkMode = true,
                     islamicDate = state.islamicDate,
                     onToggleDarkMode = { onAction(HomeAction.ToggleDarkMode) },
                 )

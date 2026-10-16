@@ -1,6 +1,7 @@
 package com.example.umarmasjid.feature.home
 
 import androidx.compose.runtime.Immutable
+import com.example.umarmasjid.core.data.preferences.DarkThemeConfig
 import java.time.LocalDate
 import java.time.chrono.HijrahDate
 import java.time.format.DateTimeFormatter
@@ -17,7 +18,7 @@ data class HomeUiState(
     val attendanceTrend: List<AttendancePoint> = emptyList(),
     val attendancePeriod: AttendancePeriod = AttendancePeriod.SEVEN_DAYS,
     val recentStudents: List<StudentSummary> = emptyList(),
-    val isDarkMode: Boolean = false,
+    val darkThemeConfig: DarkThemeConfig = DarkThemeConfig.FOLLOW_SYSTEM,
     val isLoading: Boolean = false,
     val error: String? = null,
 )

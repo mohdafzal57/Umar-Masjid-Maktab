@@ -6,7 +6,7 @@ interface SystemSettingsPreferences {
 
     val settings: Flow<SystemSettings>
 
-    suspend fun setDarkMode(enabled: Boolean)
+    suspend fun setDarkThemeConfig(config: DarkThemeConfig)
 
     suspend fun setLanguage(language: String)
 
@@ -16,8 +16,14 @@ interface SystemSettingsPreferences {
 }
 
 data class SystemSettings(
-    val darkMode: Boolean = false,
     val language: String = "en",
     val notificationsEnabled: Boolean = true,
-    val firstLaunchCompleted: Boolean = false
+    val firstLaunchCompleted: Boolean = false,
+    val darkThemeConfig: DarkThemeConfig,
 )
+
+enum class DarkThemeConfig {
+    FOLLOW_SYSTEM,
+    LIGHT,
+    DARK,
+}

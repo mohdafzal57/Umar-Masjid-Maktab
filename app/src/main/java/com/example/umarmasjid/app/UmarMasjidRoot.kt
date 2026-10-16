@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.umarmasjid.domain.repository.AuthState
@@ -99,43 +100,28 @@ fun UmarMasjidRoot(authState: AuthState) {
                 }
             }
         ) {
-            NavDisplay(
-                backStack = navigationState.rootBackStack,
-                entryProvider = entryProvider {
-                    rootSection(
-                        navigator = navigator
-                    )
-                },
-                modifier = Modifier
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Horizontal,
-                        ),
-                    )
-            )
-        }
-    } else {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        ) { innerPadding ->
-            NavDisplay(
-                backStack = navigationState.rootBackStack,
-                entryProvider = entryProvider {
-                    rootSection(
-                        navigator = navigator
-                    )
-                },
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding)
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Horizontal,
-                        ),
-                    )
-            )
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            ) { innerPadding ->
+                NavDisplay(
+                    backStack = navigationState.rootBackStack,
+                    entryProvider = entryProvider {
+                        rootSection(
+                            navigator = navigator
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding)
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Horizontal,
+                            ),
+                        )
+                )
+            }
         }
     }
 }

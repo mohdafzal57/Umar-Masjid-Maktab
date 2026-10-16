@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,17 +15,35 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.umarmasjid.app.UmarMasjidRoot
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
+import com.example.umarmasjid.util.isSystemInDarkTheme
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+
+private val lightScrim = android.graphics.Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
+private val darkScrim = android.graphics.Color.argb(0x80, 0x1b, 0x1b, 0x1b)
+
+data class ThemeSettings(
+    val darkTheme: Boolean
+)
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -44,14 +63,46 @@ class MainActivity : ComponentActivity() {
 
         intent?.let { viewModel.handleIntent(it) }
 
-        enableEdgeToEdge()
+        var themeSettings by mutableStateOf(
+            ThemeSettings(
+                darkTheme = resources.configuration.isSystemInDarkTheme,
+            ),
+        )
+
+        // Update the uiState
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    isSystemInDarkTheme(),
+                    viewModel.uiState,
+                ) { systemDark, uiState ->
+                    ThemeSettings(
+                        darkTheme = uiState.shouldUseDarkTheme(systemDark),
+                    )
+                }
+                    .onEach { themeSettings = it }
+                    .map { it.darkTheme }
+                    .distinctUntilChanged()
+                    .collect { darkTheme ->
+                        enableEdgeToEdge(
+                            statusBarStyle = SystemBarStyle.auto(
+                                lightScrim = android.graphics.Color.TRANSPARENT,
+                                darkScrim = android.graphics.Color.TRANSPARENT,
+                            ) { darkTheme },
+                            navigationBarStyle = SystemBarStyle.auto(
+                                lightScrim = lightScrim,
+                                darkScrim = darkScrim,
+                            ) { darkTheme },
+                        )
+                    }
+            }
+        }
+
         splashScreen.setKeepOnScreenCondition {
-            viewModel.shouldKeepSplashScreen()
+            viewModel.uiState.value.shouldKeepSplashScreen()
         }
         setContent {
-            val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
-            val isLocationInitialized by viewModel.isLocationInitialized.collectAsStateWithLifecycle()
-            val authState by viewModel.authState.collectAsStateWithLifecycle()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
@@ -59,14 +110,14 @@ class MainActivity : ComponentActivity() {
                 if (permissions.hasLocationPermission()) fetchLocationWhenEnabled()
             }
 
-            LaunchedEffect(isLocationInitialized) {
-                if (isLocationInitialized == false) {
+            LaunchedEffect(uiState.isLocationInitialized) {
+                if (uiState.isLocationInitialized == false) {
                     requestLocation(permissionLauncher)
                 }
             }
 
-            UmarMasjidTheme(darkMode) {
-                UmarMasjidRoot(authState)
+            UmarMasjidTheme(themeSettings.darkTheme) {
+                UmarMasjidRoot(uiState.authState)
             }
         }
     }

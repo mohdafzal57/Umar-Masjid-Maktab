@@ -2,7 +2,9 @@ package com.example.umarmasjid.feature.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.umarmasjid.core.domain.util.onSuccess
 import com.example.umarmasjid.domain.repository.AuthRepository
+import com.example.umarmasjid.domain.usecase.OnAuthenticatedSessionReady
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +25,8 @@ data class SignUpUiState(
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val onAuthenticatedSessionReady: OnAuthenticatedSessionReady
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -55,6 +58,7 @@ class SignUpViewModel @Inject constructor(
 
             try {
                 authRepository.signUp(currentState.email, currentState.password)
+                    .onSuccess { onAuthenticatedSessionReady() }
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (e: Exception) {
                 _uiState.update {

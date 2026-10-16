@@ -2,6 +2,7 @@ package com.example.umarmasjid.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.umarmasjid.core.data.preferences.DarkThemeConfig
 import com.example.umarmasjid.core.data.preferences.SystemSettingsPreferences
 import com.example.umarmasjid.domain.usecase.home.ObserveHomeDashboardUseCase
 import com.example.umarmasjid.domain.usecase.home.ObserveTodayPrayerUseCase
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -47,7 +49,7 @@ class HomeViewModel @Inject constructor(
         val dashboardUi = HomeUiMapper.mapDashboard(dashboardData)
 
         HomeUiState(
-            isDarkMode = systemSettings.darkMode,
+            darkThemeConfig = systemSettings.darkThemeConfig,
             islamicDate = prayerResult.islamicDate,
             prayerTimes = prayerResult.prayerTimes,
             stats = dashboardUi.stats,
@@ -68,13 +70,20 @@ class HomeViewModel @Inject constructor(
             HomeAction.ToggleDarkMode -> toggleDarkMode()
             is HomeAction.SelectAttendancePeriod ->
                 attendancePeriod.update { action.period }
+
             else -> Unit
         }
     }
 
     private fun toggleDarkMode() {
         viewModelScope.launch {
-            settings.setDarkMode(!state.value.isDarkMode)
+            val newConfig = when (settings.settings.first().darkThemeConfig) {
+                DarkThemeConfig.FOLLOW_SYSTEM -> DarkThemeConfig.LIGHT
+                DarkThemeConfig.LIGHT -> DarkThemeConfig.DARK
+                DarkThemeConfig.DARK -> DarkThemeConfig.FOLLOW_SYSTEM
+            }
+            println("toggleDarkMode: ${newConfig}")
+            settings.setDarkThemeConfig(newConfig)
         }
     }
 }

@@ -20,24 +20,30 @@ class DataStoreSystemSettingsPreferences @Inject constructor(
 ) : SystemSettingsPreferences {
 
     companion object {
-        private val DARK_MODE = booleanPreferencesKey("dark_mode")
+        private val THEME_KEY = stringPreferencesKey("dark_theme_config")
         private val LANGUAGE = stringPreferencesKey("language")
         private val NOTIFICATIONS = booleanPreferencesKey("notifications")
         private val FIRST_LAUNCH = booleanPreferencesKey("first_launch")
     }
 
     override val settings: Flow<SystemSettings> =
-        dataStore.data.map { pref ->
+        dataStore.data.map { prefs ->
             SystemSettings(
-                darkMode = pref[DARK_MODE] ?: false,
-                language = pref[LANGUAGE] ?: "en",
-                notificationsEnabled = pref[NOTIFICATIONS] ?: true,
-                firstLaunchCompleted = pref[FIRST_LAUNCH] ?: false
+                language = prefs[LANGUAGE] ?: "en",
+                notificationsEnabled = prefs[NOTIFICATIONS] ?: true,
+                firstLaunchCompleted = prefs[FIRST_LAUNCH] ?: false,
+                darkThemeConfig = when (prefs[THEME_KEY]) {
+                    DarkThemeConfig.LIGHT.name -> DarkThemeConfig.LIGHT
+                    DarkThemeConfig.DARK.name -> DarkThemeConfig.DARK
+                    else -> DarkThemeConfig.FOLLOW_SYSTEM
+                }
             )
         }
 
-    override suspend fun setDarkMode(enabled: Boolean) {
-        dataStore.edit { it[DARK_MODE] = enabled }
+    override suspend fun setDarkThemeConfig(config: DarkThemeConfig) {
+        dataStore.edit { prefs ->
+            prefs[THEME_KEY] = config.name
+        }
     }
 
     override suspend fun setLanguage(language: String) {
