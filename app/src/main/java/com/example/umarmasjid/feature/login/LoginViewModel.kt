@@ -2,7 +2,9 @@ package com.example.umarmasjid.feature.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.umarmasjid.core.domain.util.onError
 import com.example.umarmasjid.core.domain.util.onSuccess
+import com.example.umarmasjid.core.presentation.util.toMessage
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.usecase.OnAuthenticatedSessionReady
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,20 +49,19 @@ class LoginViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                authRepository.login(currentState.email, currentState.password)
-                    .onSuccess {
-                        onAuthenticatedSessionReady()
-                    }
-                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.localizedMessage ?: "Login failed."
-                    )
+            authRepository.login(currentState.email, currentState.password)
+                .onSuccess {
+                    onAuthenticatedSessionReady()
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
                 }
-            }
+                .onError { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.toMessage()
+                        )
+                    }
+                }
         }
     }
 }

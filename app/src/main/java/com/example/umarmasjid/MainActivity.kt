@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        intent?.let { viewModel.handleIntent(it) }
+        intent?.let(viewModel::handleIntent)
 
         var themeSettings by mutableStateOf(
             ThemeSettings(
@@ -117,7 +117,10 @@ class MainActivity : ComponentActivity() {
             }
 
             UmarMasjidTheme(themeSettings.darkTheme) {
-                UmarMasjidRoot(uiState.authState)
+                UmarMasjidRoot(
+                    uiState.authState,
+                    uiState.isPasswordRecovery
+                )
             }
         }
     }

@@ -32,11 +32,19 @@ class UmarMasjidNavigator(
                 if (state.currentRootDestination != route) {
                     state.rootBackStack.removeLastOrNull()
                     state.rootBackStack.add(route)
+
+                    // Route transition side-effects handled modularly
+                    when (route) {
+                        ConnectedRoute -> handleLoginTransition()
+                        AuthenticationRoute -> handleLogoutTransition()
+                    }
                 }
             }
 
             is Authentication -> {
-                state.authenticationBackStack.add(route)
+                if (state.authenticationBackStack.lastOrNull() != route) {
+                    state.authenticationBackStack.add(route)
+                }
             }
 
             is Connected -> {
@@ -76,5 +84,24 @@ class UmarMasjidNavigator(
         }
 
         logBackStacks("goBack()")
+    }
+
+    private fun handleLoginTransition() {
+        // Clears auth history and leaves one base entry to prevent NavDisplay crashes
+        state.authenticationBackStack.apply {
+            clear()
+            add(AuthenticationRoute.LoginRoute)
+        }
+    }
+
+    private fun handleLogoutTransition() {
+        // 1. Reset the active tab back to default (e.g., Home)
+        state.topLevelRoute = state.topLevelStartRoute
+
+        // 2. Wipe inner session history for the connected graph
+        state.backStacks.forEach { (baseRoute, stack) ->
+            stack.clear()
+            stack.add(baseRoute)
+        }
     }
 }

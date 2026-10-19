@@ -25,5 +25,7 @@ fun SupabaseAuthError.toMessage(): String {
 
         SupabaseAuthError.Unknown ->
             "Something went wrong"
+
+        SupabaseAuthError.InvalidSession -> "Password recovery session is not active."
     }
 }

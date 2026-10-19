@@ -1,9 +1,10 @@
 package com.example.umarmasjid.data.repository
 
 import android.content.Intent
-import android.net.Uri
+import android.util.Log
 import com.example.umarmasjid.core.data.networking.safeAuthCall
 import com.example.umarmasjid.core.domain.util.EmptyResult
+import com.example.umarmasjid.core.domain.util.Result
 import com.example.umarmasjid.core.domain.util.SupabaseAuthError
 import com.example.umarmasjid.core.domain.util.onSuccess
 import com.example.umarmasjid.data.local_database.AppDatabase
@@ -11,21 +12,33 @@ import com.example.umarmasjid.data.sync.PrayerTimesSyncScheduler
 import com.example.umarmasjid.data.sync.SyncManager
 import com.example.umarmasjid.domain.repository.AuthRepository
 import com.example.umarmasjid.domain.repository.AuthState
+import com.example.umarmasjid.domain.repository.AuthUiEvent
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.event.AuthEvent
 import io.github.jan.supabase.auth.handleDeeplinks
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.RefreshFailureCause
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
+
+private const val logTag = "AuthenticationRepository"
 
 @Singleton
 class SupabaseAuthRepository @Inject constructor(
@@ -34,41 +47,87 @@ class SupabaseAuthRepository @Inject constructor(
     private val appDatabase: AppDatabase,
     private val prayerTimesSyncScheduler: PrayerTimesSyncScheduler
 ) : AuthRepository {
+
     private val auth: Auth get() = supabase.auth
+
+    @OptIn(SupabaseExperimental::class)
+    override val authEvents: Flow<AuthUiEvent> =
+        auth.events
+            .map { event ->
+                when (event) {
+                    is AuthEvent.OtpError ->
+                        AuthUiEvent.DeepLinkError(event.error)
+
+                    is AuthEvent.RefreshFailure ->
+                        AuthUiEvent.RefreshError(
+                            when (val cause = event.cause) {
+                                is RefreshFailureCause.NetworkError ->
+                                    cause.exception.message
+                                        ?: "Network error while refreshing session"
+
+                                is RefreshFailureCause.InternalServerError ->
+                                    cause.exception.message
+                                        ?: "Server error while refreshing session"
+                            }
+                        )
+                }
+            }
 
     override val teacherId: String
         get() = auth.currentUserOrNull()?.id
             ?: throw IllegalStateException("User not logged in")
 
+    private val _authState: MutableStateFlow<AuthState> = MutableStateFlow(AuthState.Initializing)
+    override val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    init {
+        scope.launch {
+            auth.sessionStatus.collect {
+                logSessionStatus(it)
+            }
+        }
+    }
+
+    private fun logSessionStatus(sessionStatus: SessionStatus) {
+        when (sessionStatus) {
+            is SessionStatus.Authenticated -> {
+                Log.d(
+                    logTag, """
+                        Session Source: ${sessionStatus.source}
+                        Session Status: Authenticated
+                        Session Expiry: ${sessionStatus.session.expiresAt.toLocalDateTime(TimeZone.UTC)}
+                    """.trimIndent()
+                )
+                _authState.value = AuthState.Authenticated
+            }
+
+            SessionStatus.Initializing -> {
+                Log.d(logTag, "Session Status: Initializing")
+                _authState.value = AuthState.Initializing
+            }
+
+            is SessionStatus.NotAuthenticated -> {
+                Log.d(
+                    logTag, """
+                        Session Status: UnAuthenticated
+                        IsSignOut: ${sessionStatus.isSignOut}
+                    """.trimIndent()
+                )
+                _authState.value = AuthState.Unauthenticated
+            }
+
+            is SessionStatus.RefreshFailure -> {
+                Log.d(logTag, "SessionStatus: RefreshFailure")
+            }
+        }
+    }
+
     private val _isPasswordRecovery = MutableStateFlow(false)
 
-    override val authState: Flow<AuthState> =
-        combine(
-            auth.sessionStatus,
-            _isPasswordRecovery
-        ) { sessionStatus, isPasswordRecovery ->
-            when (sessionStatus) {
-                is SessionStatus.Initializing -> AuthState.Loading
-                is SessionStatus.Authenticated -> {
-                    if (isPasswordRecovery) {
-                        AuthState.PasswordRecovery
-                    } else {
-                        AuthState.Authenticated
-                    }
-                }
+    override val passwordRecovery = _isPasswordRecovery.asStateFlow()
 
-                is SessionStatus.RefreshFailure -> {
-                    // SessionStatus.RefreshFailure is transient while Supabase retries in the background.
-                    // Keep the user in Loading or retain their last status rather than instantly kicking to Unauthenticated.
-                    AuthState.Loading
-                }
-
-                is SessionStatus.NotAuthenticated -> {
-                    _isPasswordRecovery.value = false
-                    AuthState.Unauthenticated
-                }
-            }
-        }.distinctUntilChanged()
 
     override suspend fun login(email: String, password: String): EmptyResult<SupabaseAuthError> {
         return safeAuthCall {
@@ -98,10 +157,9 @@ class SupabaseAuthRepository @Inject constructor(
     }
 
     override suspend fun updatePassword(newPassword: String): EmptyResult<SupabaseAuthError> {
-        //todo: urgency + need to see here!!!
-//        if (!_isPasswordRecovery.value) {
-//            return EmptyResult.Failure(SupabaseAuthError.InvalidSession("Password recovery session is not active."))
-//        }
+        if (!_isPasswordRecovery.value) {
+            return Result.Error(SupabaseAuthError.InvalidSession)
+        }
         return safeAuthCall {
             auth.updateUser {
                 password = newPassword
@@ -114,38 +172,28 @@ class SupabaseAuthRepository @Inject constructor(
 
     override suspend fun handleDeeplink(intent: Intent) {
         val uri = intent.data ?: return
-        val isRecoveryLink = uri.isRecoveryLink()
+        val fragment = uri.fragment ?: ""
+        val query = uri.query ?: ""
+        val isRecovery = fragment.contains("type=recovery") ||
+                query.contains("type=recovery") ||
+                uri.getQueryParameter("type") == "recovery"
 
         try {
             supabase.handleDeeplinks(
                 intent = intent,
-                onSessionSuccess = {}
+                onSessionSuccess = {
+                    _isPasswordRecovery.value = isRecovery
+                }
             )
-            if (isRecoveryLink) {
-                _isPasswordRecovery.value = true
-            }
-
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
-            _isPasswordRecovery.value = false
-            throw e
-        }
-    }
-
-    private fun Uri.isRecoveryLink(): Boolean {
-        val type = getQueryParameter("type")
-        if (type == "recovery") return true
-
-        val fragmentStr = fragment ?: return false
-        return fragmentStr.split("&").any { param ->
-            param == "type=recovery" || param.startsWith("type=recovery")
         }
     }
 
     override suspend fun logout() {
         syncManager.cancelAllSyncs()
         prayerTimesSyncScheduler.cancelPrayerTimesSync()
+        _isPasswordRecovery.value = false
 
         try {
             auth.signOut()

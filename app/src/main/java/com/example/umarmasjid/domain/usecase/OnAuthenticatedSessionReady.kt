@@ -8,7 +8,7 @@ class OnAuthenticatedSessionReady @Inject constructor(
     private val syncManager: SyncManager,
     private val prayerTimesSyncScheduler: PrayerTimesSyncScheduler,
 ) {
-    suspend operator fun invoke() {
+    operator fun invoke() {
         syncManager.requestSync()
         prayerTimesSyncScheduler.requestInitialSync()
         prayerTimesSyncScheduler.ensurePeriodicSyncScheduled()

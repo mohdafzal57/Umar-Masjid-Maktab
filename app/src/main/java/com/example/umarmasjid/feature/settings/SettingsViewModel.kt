@@ -30,7 +30,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = AuthState.Loading
+            initialValue = AuthState.Initializing
         )
 
     private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Idle)

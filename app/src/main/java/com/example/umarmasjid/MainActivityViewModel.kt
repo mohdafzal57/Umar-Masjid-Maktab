@@ -31,11 +31,13 @@ class MainActivityViewModel @Inject constructor(
             authRepository.authState,
             settings.settings.map { it.darkThemeConfig },
             preferences.isLocationInitialized(),
-        ) { authState, darkThemeConfig, isLocationInitialized ->
+            authRepository.passwordRecovery,
+        ) { authState, darkThemeConfig, isLocationInitialized, passwordRecovery ->
             MainActivityUiState(
                 authState = authState,
                 darkThemeConfig = darkThemeConfig,
                 isLocationInitialized = isLocationInitialized,
+                isPasswordRecovery = passwordRecovery
             )
         }.stateIn(
             scope = viewModelScope,
@@ -45,11 +47,11 @@ class MainActivityViewModel @Inject constructor(
 
 
     fun handleIntent(intent: Intent) {
+        val uri = intent.data ?: return
+        if (uri.scheme != "umarmasjid" || uri.host != "auth") return
+
         viewModelScope.launch {
-            val uri = intent.data ?: return@launch
-            if (uri.scheme == "umarmasjid" && uri.host == "auth") {
-                authRepository.handleDeeplink(intent)
-            }
+            authRepository.handleDeeplink(intent)
         }
     }
 
@@ -61,20 +63,21 @@ class MainActivityViewModel @Inject constructor(
 }
 
 data class MainActivityUiState(
-    val authState: AuthState = AuthState.Loading,
-    val darkThemeConfig: DarkThemeConfig =
-        DarkThemeConfig.FOLLOW_SYSTEM,
+    val authState: AuthState = AuthState.Initializing,
+    val darkThemeConfig: DarkThemeConfig = DarkThemeConfig.FOLLOW_SYSTEM,
     val isLocationInitialized: Boolean? = null,
+    val isPasswordRecovery: Boolean = false,
 ) {
-    fun shouldKeepSplashScreen(): Boolean =
-        authState is AuthState.Loading
+
+    fun shouldKeepSplashScreen(): Boolean = authState is AuthState.Initializing
 
     fun shouldUseDarkTheme(
         isSystemDarkTheme: Boolean,
-    ): Boolean =
-        when (darkThemeConfig) {
+    ): Boolean {
+        return when (darkThemeConfig) {
             DarkThemeConfig.FOLLOW_SYSTEM -> isSystemDarkTheme
             DarkThemeConfig.LIGHT -> false
             DarkThemeConfig.DARK -> true
         }
+    }
 }

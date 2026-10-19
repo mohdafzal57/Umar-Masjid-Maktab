@@ -2,6 +2,9 @@ package com.example.umarmasjid.feature.reset_password
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.umarmasjid.core.domain.util.onError
+import com.example.umarmasjid.core.domain.util.onSuccess
+import com.example.umarmasjid.core.presentation.util.toMessage
 import com.example.umarmasjid.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,17 +42,18 @@ class ResetPasswordViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                authRepository.resetPassword(email)
-                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.localizedMessage ?: "Failed to send reset password email."
-                    )
+            authRepository.resetPassword(email)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
                 }
-            }
+                .onError { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.toMessage()
+                        )
+                    }
+                }
         }
     }
 }

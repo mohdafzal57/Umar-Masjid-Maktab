@@ -12,7 +12,7 @@ fun EntryProviderScope<NavKey>.updatePasswordEntry(
     entry<AuthenticationRoute.UpdatePasswordRoute> {
         UpdatePasswordScreen(
             onSuccessDone = {
-                navigator.navigate(ConnectedRoute)
+                navigator.navigate(AuthenticationRoute)
             }
         )
     }
