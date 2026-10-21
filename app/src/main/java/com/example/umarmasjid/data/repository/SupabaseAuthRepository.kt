@@ -3,6 +3,7 @@ package com.example.umarmasjid.data.repository
 import android.content.Intent
 import android.util.Log
 import com.example.umarmasjid.core.data.networking.safeAuthCall
+import com.example.umarmasjid.core.data.preferences.SystemSettingsPreferences
 import com.example.umarmasjid.core.domain.util.EmptyResult
 import com.example.umarmasjid.core.domain.util.Result
 import com.example.umarmasjid.core.domain.util.SupabaseAuthError
@@ -27,8 +28,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,7 +49,8 @@ class SupabaseAuthRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val syncManager: SyncManager,
     private val appDatabase: AppDatabase,
-    private val prayerTimesSyncScheduler: PrayerTimesSyncScheduler
+    private val prayerTimesSyncScheduler: PrayerTimesSyncScheduler,
+    private val settingsPreferences: SystemSettingsPreferences
 ) : AuthRepository {
 
     private val auth: Auth get() = supabase.auth
@@ -77,52 +82,48 @@ class SupabaseAuthRepository @Inject constructor(
         get() = auth.currentUserOrNull()?.id
             ?: throw IllegalStateException("User not logged in")
 
-    private val _authState: MutableStateFlow<AuthState> = MutableStateFlow(AuthState.Initializing)
-    override val authState: StateFlow<AuthState> = _authState.asStateFlow()
-
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         scope.launch {
-            auth.sessionStatus.collect {
-                logSessionStatus(it)
+            auth.sessionStatus.collect { status ->
+                if (status is SessionStatus.Authenticated) {
+                    status.session.user?.id?.let { teacherId ->
+                        settingsPreferences.setTeacherId(teacherId)
+                    }
+                }
             }
         }
     }
 
-    private fun logSessionStatus(sessionStatus: SessionStatus) {
-        when (sessionStatus) {
-            is SessionStatus.Authenticated -> {
-                Log.d(
-                    logTag, """
-                        Session Source: ${sessionStatus.source}
-                        Session Status: Authenticated
-                        Session Expiry: ${sessionStatus.session.expiresAt.toLocalDateTime(TimeZone.UTC)}
-                    """.trimIndent()
-                )
-                _authState.value = AuthState.Authenticated
-            }
+    override val authState: Flow<AuthState> =
+        combine(
+            settingsPreferences.settings,
+            auth.sessionStatus,
+        ) { settings, sessionStatus ->
+            val localTeacherId = settings.teacherId
+            when (sessionStatus) {
+                is SessionStatus.Authenticated ->
+                    AuthState.Authenticated
 
-            SessionStatus.Initializing -> {
-                Log.d(logTag, "Session Status: Initializing")
-                _authState.value = AuthState.Initializing
-            }
+                SessionStatus.Initializing ->
+                    if (localTeacherId != "") {
+                        AuthState.Authenticated
+                    } else {
+                        AuthState.Initializing
+                    }
 
-            is SessionStatus.NotAuthenticated -> {
-                Log.d(
-                    logTag, """
-                        Session Status: UnAuthenticated
-                        IsSignOut: ${sessionStatus.isSignOut}
-                    """.trimIndent()
-                )
-                _authState.value = AuthState.Unauthenticated
-            }
+                is SessionStatus.RefreshFailure ->
+                    if (localTeacherId != "") {
+                        AuthState.Authenticated
+                    } else {
+                        AuthState.Unauthenticated
+                    }
 
-            is SessionStatus.RefreshFailure -> {
-                Log.d(logTag, "SessionStatus: RefreshFailure")
+                is SessionStatus.NotAuthenticated ->
+                    AuthState.Unauthenticated
             }
         }
-    }
 
     private val _isPasswordRecovery = MutableStateFlow(false)
 
@@ -205,10 +206,14 @@ class SupabaseAuthRepository @Inject constructor(
             try {
                 auth.clearSession()
             } finally {
+                settingsPreferences.setTeacherId("")
                 withContext(Dispatchers.IO) {
                     appDatabase.clearAllTables()
                 }
             }
         }
     }
+
+    private suspend fun localTeacherSessionExists(): Boolean =
+        settingsPreferences.settings.first().teacherId.isNotEmpty()
 }

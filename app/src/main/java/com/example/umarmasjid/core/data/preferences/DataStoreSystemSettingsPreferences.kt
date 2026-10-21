@@ -24,6 +24,8 @@ class DataStoreSystemSettingsPreferences @Inject constructor(
         private val LANGUAGE = stringPreferencesKey("language")
         private val NOTIFICATIONS = booleanPreferencesKey("notifications")
         private val FIRST_LAUNCH = booleanPreferencesKey("first_launch")
+
+        private val TEACHER_ID = stringPreferencesKey("teacher_id")
     }
 
     override val settings: Flow<SystemSettings> =
@@ -36,7 +38,8 @@ class DataStoreSystemSettingsPreferences @Inject constructor(
                     DarkThemeConfig.LIGHT.name -> DarkThemeConfig.LIGHT
                     DarkThemeConfig.DARK.name -> DarkThemeConfig.DARK
                     else -> DarkThemeConfig.FOLLOW_SYSTEM
-                }
+                },
+                teacherId = prefs[TEACHER_ID] ?: ""
             )
         }
 
@@ -56,6 +59,10 @@ class DataStoreSystemSettingsPreferences @Inject constructor(
 
     override suspend fun setFirstLaunchCompleted(completed: Boolean) {
         dataStore.edit { it[FIRST_LAUNCH] = completed }
+    }
+
+    override suspend fun setTeacherId(teacherId: String) {
+        dataStore.edit { it[TEACHER_ID] = teacherId }
     }
 }
 

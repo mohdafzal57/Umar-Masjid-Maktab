@@ -19,7 +19,7 @@ sealed interface AuthUiEvent {
 
 interface AuthRepository {
     val teacherId: String
-    val authState: StateFlow<AuthState>
+    val authState: Flow<AuthState>
     val passwordRecovery: StateFlow<Boolean>
     val authEvents: Flow<AuthUiEvent>
     suspend fun login(email: String, password: String): EmptyResult<SupabaseAuthError>

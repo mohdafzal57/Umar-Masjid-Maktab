@@ -12,7 +12,7 @@ fun EntryProviderScope<NavKey>.attendanceBarChartEntry(
 ) {
     entry<ConnectedRoute.AttendanceBarChartRoute> { key ->
         val studentId = key.studentId
-        AttendanceBarCharScreen(
+        AttendanceBarChartScreen(
             viewModel = hiltViewModel<AttendanceBarChartViewModel, Factory>(
                 key = "attendance_chart_$studentId",
                 creationCallback = { factory ->
