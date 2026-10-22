@@ -127,4 +127,12 @@ dependencies {
 
     // Splash Screen
     implementation("androidx.core:core-splashscreen:1.2.0")
+
+    val glanceVersion = "1.2.0" // Or "1.3.0-alpha02" for latest preview
+
+    // Core AppWidget support
+    implementation("androidx.glance:glance-appwidget:$glanceVersion")
+
+    // Material 3 theming for Glance widgets (Recommended)
+    implementation("androidx.glance:glance-material3:$glanceVersion")
 }

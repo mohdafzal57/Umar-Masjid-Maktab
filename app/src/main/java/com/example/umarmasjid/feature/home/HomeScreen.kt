@@ -149,14 +149,14 @@ internal fun HomeScreenContent(
             }
         }
 
-        if (!showHeader) {
+        /*if (!showHeader) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .windowInsetsTopHeight(WindowInsets.statusBars)
                     .background(MaterialTheme.colorScheme.primaryContainer)
             )
-        }
+        }*/
     }
 }
 

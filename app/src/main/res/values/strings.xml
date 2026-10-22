@@ -8,4 +8,12 @@
     <string name="error_unknown">Something went wrong. Please try again later.</string>
     <string name="error_serialization">Couldn\'t serialize or deserialize data.</string>
     <string name="splash_loading">Welcome to Umar Masjid Maktab, we are Loading...</string>
+    <string name="prayer_times_widget_description">Sunrise and sunset prayer times</string>
+
+    <string name="widget_prayer_times_header">Prayer times</string>
+    <string name="prayer_fajr_ends">Fajr ends</string>
+    <string name="prayer_sunrise">Sunrise</string>
+    <string name="prayer_maghrib_starts">Maghrib starts</string>
+    <string name="prayer_sunset">Sunset</string>
+    <string name="cd_prayer_times">Fajr ends at sunrise, %1$s. Maghrib starts at sunset, %2$s.</string>
 </resources>

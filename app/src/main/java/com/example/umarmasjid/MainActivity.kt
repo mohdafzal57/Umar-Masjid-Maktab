@@ -24,6 +24,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.umarmasjid.app.UmarMasjidRoot
+import com.example.umarmasjid.ui.theme.GradientColors
+import com.example.umarmasjid.ui.theme.UmarMasjidBackground
+import com.example.umarmasjid.ui.theme.UmarMasjidGradientBackground
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 import com.example.umarmasjid.util.isSystemInDarkTheme
 import com.google.android.gms.common.api.ResolvableApiException
@@ -117,10 +120,12 @@ class MainActivity : ComponentActivity() {
             }
 
             UmarMasjidTheme(themeSettings.darkTheme) {
-                UmarMasjidRoot(
-                    uiState.authState,
-                    uiState.isPasswordRecovery
-                )
+                UmarMasjidBackground {
+                    UmarMasjidRoot(
+                        uiState.authState,
+                        uiState.isPasswordRecovery
+                    )
+                }
             }
         }
     }
