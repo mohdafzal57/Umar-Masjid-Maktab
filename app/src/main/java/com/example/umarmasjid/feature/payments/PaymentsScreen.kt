@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.umarmasjid.feature.components.TopLevelTopAppBar
 import com.example.umarmasjid.feature.payments.components.PaidStudentsPage
 import com.example.umarmasjid.feature.payments.components.UnpaidStudentsPage
 import kotlinx.coroutines.launch
@@ -52,26 +53,8 @@ fun PaymentsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Payments",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = popToHome) {
-                        Icon(
-                            Icons.AutoMirrored.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            TopLevelTopAppBar(
+                title = "Payments"
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -86,10 +69,8 @@ fun PaymentsScreen(
             // ✅ Tabs
             PrimaryTabRow(
                 selectedTabIndex = pagerState.currentPage,
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MaterialTheme.colorScheme.primary,
-                divider = {}, // optional clean look
-                indicator = {} // optional custom indicator later
             ) {
                 PaymentStatus.entries.forEachIndexed { index, status ->
                     val selected = pagerState.currentPage == index

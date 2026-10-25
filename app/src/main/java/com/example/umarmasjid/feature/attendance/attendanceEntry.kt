@@ -15,7 +15,6 @@ fun EntryProviderScope<NavKey>.attendanceEntry(
         val viewModel = hiltViewModel<AttendanceViewModel>()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         AttendanceScreen(
-            popToHome = navigator::goBack,
             uiState = uiState,
             onEvent = viewModel::onAction,
         )

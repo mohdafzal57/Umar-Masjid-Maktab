@@ -104,13 +104,6 @@ fun StudentsList(
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Header with animation
-        item {
-            StudentsListHeader(
-                count = students.size,
-                searchQuery = searchQuery
-            )
-        }
         if (isLoading) {
             items(6) { // 6 shimmer placeholders
                 StudentCardShimmer()

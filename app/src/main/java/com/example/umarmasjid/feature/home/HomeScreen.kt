@@ -138,13 +138,6 @@ internal fun HomeScreenContent(
                 )
             }
             item {
-                HomeActionButtons(
-                    onAddStudent = { onAction(HomeAction.NavigateToStudents) },
-                    onViewReports = { onAction(HomeAction.NavigateToAttendance) },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-            }
-            item {
                 Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.safeDrawing))
             }
         }
@@ -318,44 +311,6 @@ private fun RecentStudentsSection(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun HomeActionButtons(
-    onAddStudent: () -> Unit,
-    onViewReports: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Button(
-            onClick = onAddStudent,
-            modifier = Modifier
-                .weight(1f)
-                .height(56.dp),
-            shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-        ) {
-            Text(
-                text = "👤  Add Student",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Button(
-            onClick = onViewReports,
-            modifier = Modifier
-                .weight(1f)
-                .height(56.dp),
-            shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-        ) {
-            Text(
-                text = "📊  View Reports",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
         }
     }
 }

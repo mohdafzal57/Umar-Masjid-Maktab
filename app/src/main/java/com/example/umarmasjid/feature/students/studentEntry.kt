@@ -18,7 +18,6 @@ fun EntryProviderScope<NavKey>.studentEntry(navigator: UmarMasjidNavigator) {
         StudentScreen(
             students = uiState.students,
             isLoading = uiState.isLoading,
-            popToHome = navigator::goBack,
             onEvent = viewModel::onEvent,
             navigateToPayment = { id -> navigator.navigate(ConnectedRoute.StudentPaymentRoute(id)) },
             navigateToAttendanceBarChart = { id ->

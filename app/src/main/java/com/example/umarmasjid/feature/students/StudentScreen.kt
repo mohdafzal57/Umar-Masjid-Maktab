@@ -45,7 +45,6 @@ import com.example.umarmasjid.feature.students.components.StudentsList
 fun StudentScreen(
     students: List<StudentEntity>,
     isLoading: Boolean,
-    popToHome: () -> Unit,
     navigateToPayment: (studentId: String) -> Unit,
     onEvent: (StudentEvent) -> Unit,
     navigateToAttendanceBarChart: (String) -> Unit
@@ -77,7 +76,6 @@ fun StudentScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             StudentTopAppBar(
-                popToHome = popToHome,
                 showSearchBar = showSearchBar,
                 onSearchToggle = { showSearchBar = showSearchBar.not(); searchQuery = "" },
                 studentCount = students.size,

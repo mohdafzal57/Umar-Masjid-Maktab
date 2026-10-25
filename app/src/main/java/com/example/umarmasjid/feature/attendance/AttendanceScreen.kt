@@ -1,4 +1,3 @@
-
 package com.example.umarmasjid.feature.attendance
 
 import androidx.compose.animation.animateColorAsState
@@ -69,12 +68,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.umarmasjid.data.local_database.model.AttendanceStatus
 import com.example.umarmasjid.data.local_database.model.StudentAttendance
+import com.example.umarmasjid.feature.components.TopLevelTopAppBar
 import com.example.umarmasjid.ui.theme.UmarMasjidTheme
 
 
 @Composable
 fun AttendanceScreen(
-    popToHome: () -> Unit,
     uiState: AttendanceUiState,
     onEvent: (AttendanceAction) -> Unit,
     modifier: Modifier = Modifier
@@ -110,8 +109,8 @@ fun AttendanceScreen(
 
             Scaffold(
                 topBar = {
-                    AttendanceTopAppBar(
-                        onBack = popToHome, presentCount = presentCount, totalCount = totalStudents
+                    TopLevelTopAppBar(
+                        title = "Attendance"
                     )
                 }) { padding ->
 
@@ -139,20 +138,19 @@ fun AttendanceScreen(
                         }
 
                     } else {
-
-                        item {
-                            AttendanceListHeader(
-                                totalStudents = totalStudents
-                            )
-                        }
-
                         items(
                             items = students,
                             key = { it.studentId }
                         ) { studentAttendance ->
                             ModernStudentAttendanceCard(
                                 student = studentAttendance,
-                                onStatusChange = { onEvent( AttendanceAction.MarkAttendance(studentAttendance))}
+                                onStatusChange = {
+                                    onEvent(
+                                        AttendanceAction.MarkAttendance(
+                                            studentAttendance
+                                        )
+                                    )
+                                }
                             )
                         }
                     }
@@ -167,45 +165,6 @@ fun AttendanceScreen(
         }
     }
 }
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AttendanceTopAppBar(
-    onBack: () -> Unit, presentCount: Int, totalCount: Int
-) {
-    TopAppBar(
-        title = {
-            Column {
-
-                Text(
-                    text = "Attendance",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                if (totalCount > 0) {
-                    Text(
-                        text = "$presentCount/$totalCount present",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }, navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back"
-                )
-            }
-        }, colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurface
-        )
-    )
-}
-
 
 @Composable
 fun AttendanceSummaryCard(
@@ -426,93 +385,6 @@ private fun CompactArcGauge(
     }
 }
 
-
-@Composable
-fun ColumnScope.BentoStatBox(
-    title: String, count: Int, icon: ImageVector, iconTint: Color, modifier: Modifier = Modifier
-) {
-
-    val animatedCount by animateIntAsState(
-        targetValue = count, animationSpec = tween(
-            durationMillis = 1500, easing = FastOutSlowInEasing
-        ), label = "CountTicker"
-    )
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface
-    ) {
-
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
-        ) {
-
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = iconTint,
-                modifier = Modifier.size(24.dp)
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            Text(
-                text = "$animatedCount",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-
-@Composable
-fun AttendanceListHeader(
-    totalStudents: Int
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        Text(
-            text = "Students",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Surface(
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        ) {
-
-            Text(
-                text = "$totalStudents students",
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(
-                    horizontal = 8.dp, vertical = 4.dp
-                )
-            )
-        }
-    }
-}
-
-
 @Composable
 fun EmptyAttendanceState() {
 
@@ -565,29 +437,29 @@ fun EmptyAttendanceState() {
 
 private object AttendanceColors {
     val Present = Color(0xFF2E7D32)   // green
-    val Late    = Color(0xFFF9A825)   // amber
-    val Absent  = Color(0xFFD32F2F)   // red
+    val Late = Color(0xFFF9A825)   // amber
+    val Absent = Color(0xFFD32F2F)   // red
 }
 
 private fun statusColor(status: AttendanceStatus?): Color = when (status) {
     AttendanceStatus.PRESENT -> AttendanceColors.Present
-    AttendanceStatus.LATE    -> AttendanceColors.Late
-    AttendanceStatus.ABSENT  -> AttendanceColors.Absent
-    null                     -> Color(0xFF9E9E9E)
+    AttendanceStatus.LATE -> AttendanceColors.Late
+    AttendanceStatus.ABSENT -> AttendanceColors.Absent
+    null -> Color(0xFF9E9E9E)
 }
 
 private fun statusIcon(status: AttendanceStatus?): ImageVector = when (status) {
     AttendanceStatus.PRESENT -> Icons.Default.CheckCircle
-    AttendanceStatus.LATE    -> Icons.Default.Schedule
-    AttendanceStatus.ABSENT  -> Icons.Default.Cancel
-    null                     -> Icons.Default.Schedule
+    AttendanceStatus.LATE -> Icons.Default.Schedule
+    AttendanceStatus.ABSENT -> Icons.Default.Cancel
+    null -> Icons.Default.Schedule
 }
 
 private fun statusText(status: AttendanceStatus?): String = when (status) {
     AttendanceStatus.PRESENT -> "Present"
-    AttendanceStatus.LATE    -> "Late"
-    AttendanceStatus.ABSENT  -> "Absent"
-    null                     -> "Not marked"
+    AttendanceStatus.LATE -> "Late"
+    AttendanceStatus.ABSENT -> "Absent"
+    null -> "Not marked"
 }
 
 // ---------- Card ----------
@@ -609,7 +481,11 @@ fun ModernStudentAttendanceCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = MaterialTheme.shapes.large
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
 
             Box(
                 modifier = Modifier
@@ -619,7 +495,9 @@ fun ModernStudentAttendanceCard(
             )
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
