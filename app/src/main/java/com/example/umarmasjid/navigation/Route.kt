@@ -56,4 +56,7 @@ data object ConnectedRoute: Root {
 
     @Serializable
     data object StudentRoute : Connected
+
+    @Serializable
+    data object SettingsRoute : Connected
 }

@@ -185,7 +185,9 @@ fun UnpaidStudentCard(
         note: String?
     ) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+    )
     var showAddPaymentSheet by remember { mutableStateOf(false) }
 
     val accentColor = MaterialTheme.colorScheme.secondary

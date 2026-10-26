@@ -12,7 +12,8 @@ fun EntryProviderScope<NavKey>.homeEntry(
         HomeScreen(
             navigateToAttendance = { navigator.navigate(ConnectedRoute.AttendanceRoute) },
             navigateToStudentManagement = { navigator.navigate(ConnectedRoute.StudentRoute) },
-            navigateToFeeManagement = { navigator.navigate(ConnectedRoute.PaymentRoute) }
+            navigateToFeeManagement = { navigator.navigate(ConnectedRoute.PaymentRoute) },
+            navigateToSettings = { navigator.navigate(ConnectedRoute.SettingsRoute) }
         )
     }
 }

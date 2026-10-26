@@ -8,4 +8,5 @@ sealed interface HomeAction {
     data object NavigateToStudents : HomeAction
     data object NavigateToFees : HomeAction
     data class NavigateToStudent(val studentId: String) : HomeAction
+    data object NavigateToSettings : HomeAction
 }

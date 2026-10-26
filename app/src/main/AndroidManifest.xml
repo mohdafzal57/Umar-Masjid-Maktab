@@ -29,11 +29,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UmarMasjid">
         <activity
-            android:name=".feature.settings.SettingsActivity"
-            android:exported="false"
-            android:label="@string/title_activity_settings"
-            android:theme="@style/Theme.UmarMasjid" />
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"

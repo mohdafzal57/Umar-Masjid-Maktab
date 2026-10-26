@@ -16,6 +16,7 @@ import com.example.umarmasjid.feature.reset_password.updatePasswordEntry
 import com.example.umarmasjid.feature.signup.signupEntry
 import com.example.umarmasjid.feature.student_payment.studentPaymentEntry
 import com.example.umarmasjid.feature.students.studentEntry
+import com.example.umarmasjid.feature.settings.settingsEntry
 
 fun EntryProviderScope<NavKey>.rootSection(
     navigator: UmarMasjidNavigator,
@@ -42,6 +43,7 @@ fun EntryProviderScope<NavKey>.rootSection(
                         paymentsEntry(navigator)
                         studentPaymentEntry(navigator)
                         attendanceBarChartEntry(navigator)
+                        settingsEntry(navigator)
                     }
                 ),
                 sceneStrategies = listOf(listDetailStrategy),

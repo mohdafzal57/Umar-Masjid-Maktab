@@ -49,13 +49,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.umarmasjid.feature.settings.SettingsActivity
 
 @Composable
 fun HomeScreen(
     navigateToAttendance: () -> Unit,
     navigateToStudentManagement: () -> Unit,
     navigateToFeeManagement: () -> Unit,
+    navigateToSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -68,6 +68,7 @@ fun HomeScreen(
                 is HomeAction.NavigateToStudents -> navigateToStudentManagement()
                 is HomeAction.NavigateToFees -> navigateToFeeManagement()
                 is HomeAction.NavigateToStudent -> navigateToStudentManagement()
+                is HomeAction.NavigateToSettings -> navigateToSettings()
                 else -> viewModel.onAction(action)
             }
         },
@@ -158,7 +159,6 @@ private fun HomeHeader(
     state: HomeUiState,
     onAction: (HomeAction) -> Unit,
 ) {
-    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -193,8 +193,7 @@ private fun HomeHeader(
                 }
                 IconButton(
                     onClick = {
-                        val intent = Intent(context, SettingsActivity::class.java)
-                        context.startActivity(intent)
+                        onAction(HomeAction.NavigateToSettings)
                     },
                     modifier = Modifier
                         .size(44.dp)
