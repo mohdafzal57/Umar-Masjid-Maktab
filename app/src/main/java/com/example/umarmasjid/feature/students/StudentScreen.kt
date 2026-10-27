@@ -89,17 +89,16 @@ fun StudentScreen(
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                 exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
             ) {
-                AddStudentFAB(
-                    onClick = { showSheet = true },
-                    studentsCount = students.size
-                )
+                AddStudentFAB(onClick = { showSheet = true })
             }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             if (filteredStudents.isEmpty() && !isLoading) {
                 if (searchQuery.isNotBlank()) {
-                    EmptySearchState(searchQuery = searchQuery, onClearSearch = { searchQuery = "" })
+                    EmptySearchState(
+                        searchQuery = searchQuery,
+                        onClearSearch = { searchQuery = "" })
                 } else {
                     EmptyStudentsState(onAddStudent = { showSheet = true })
                 }
@@ -128,7 +127,15 @@ fun StudentScreen(
                 },
                 student = selectedStudent,
                 onAdd = { name, phone -> onEvent(StudentEvent.AddStudent(name, phone)) },
-                onUpdate = { student, name, phone -> onEvent(StudentEvent.UpdateStudent(student, name, phone)) },
+                onUpdate = { student, name, phone ->
+                    onEvent(
+                        StudentEvent.UpdateStudent(
+                            student,
+                            name,
+                            phone
+                        )
+                    )
+                },
                 onDelete = { student -> onEvent(StudentEvent.DeleteStudent(student)) }
             )
         }
@@ -160,6 +167,7 @@ fun shimmerBrush(): Brush {
         end = Offset(translateAnim, 0f)
     )
 }
+
 @Composable
 fun ShimmerBox(modifier: Modifier) {
     Box(

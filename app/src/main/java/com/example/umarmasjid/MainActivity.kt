@@ -52,14 +52,6 @@ data class ThemeSettings(
 class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
 
-    private val resolutionLauncher = registerForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            viewModel.fetchLocationOnce()
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -163,6 +155,14 @@ class MainActivity : ComponentActivity() {
 
     private fun fetchLocationWhenEnabled() {
         checkAndEnableLocation {
+            viewModel.fetchLocationOnce()
+        }
+    }
+
+    private val resolutionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
             viewModel.fetchLocationOnce()
         }
     }

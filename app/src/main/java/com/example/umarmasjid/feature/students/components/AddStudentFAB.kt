@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AddStudentFAB(
     onClick: () -> Unit,
-    studentsCount: Int,
     modifier: Modifier = Modifier
 ) {
     FloatingActionButton(
